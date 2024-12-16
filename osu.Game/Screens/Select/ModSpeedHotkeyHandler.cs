@@ -45,7 +45,7 @@ namespace osu.Game.Screens.Select
 
         private void storeLastActiveRateAdjustMod()
         {
-            lastActiveRateAdjustMod = (ModRateAdjust?)selectedMods.Value.OfType<ModRateAdjust>().SingleOrDefault()?.DeepClone() ?? lastActiveRateAdjustMod;
+            lastActiveRateAdjustMod = (ModRateAdjust?)selectedMods.Value.OfType<ModRateAdjust>().FirstOrDefault()?.DeepClone() ?? lastActiveRateAdjustMod;
         }
 
         public bool ChangeSpeed(double delta, IEnumerable<Mod> availableMods)

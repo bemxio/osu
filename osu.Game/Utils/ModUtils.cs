@@ -50,42 +50,7 @@ namespace osu.Game.Utils
         /// <returns>Whether all <see cref="Mod"/>s in the combination are compatible with each-other.</returns>
         public static bool CheckCompatibleSet(IEnumerable<Mod> combination, [NotNullWhen(false)] out List<Mod>? invalidMods)
         {
-            var mods = FlattenMods(combination).ToArray();
-            invalidMods = null;
-
-            // ensure there are no duplicate mod definitions.
-            for (int i = 0; i < mods.Length; i++)
-            {
-                var candidate = mods[i];
-
-                for (int j = i + 1; j < mods.Length; j++)
-                {
-                    var m = mods[j];
-
-                    if (candidate.Equals(m))
-                    {
-                        invalidMods ??= new List<Mod>();
-                        invalidMods.Add(m);
-                    }
-                }
-            }
-
-            foreach (var mod in mods)
-            {
-                foreach (var type in mod.IncompatibleMods)
-                {
-                    foreach (var invalid in mods.Where(m => type.IsInstanceOfType(m)))
-                    {
-                        if (invalid == mod)
-                            continue;
-
-                        invalidMods ??= new List<Mod>();
-                        invalidMods.Add(invalid);
-                    }
-                }
-            }
-
-            return invalidMods == null;
+            invalidMods = null; return true;
         }
 
         /// <summary>

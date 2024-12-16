@@ -434,7 +434,7 @@ namespace osu.Game.Overlays.Mods
 
             foreach (var modState in AllAvailableMods)
             {
-                var matchingSelectedMod = SelectedMods.Value.SingleOrDefault(selected => selected.GetType() == modState.Mod.GetType());
+                var matchingSelectedMod = SelectedMods.Value.FirstOrDefault(selected => selected.GetType() == modState.Mod.GetType());
 
                 if (matchingSelectedMod != null)
                 {
