@@ -128,19 +128,7 @@ namespace osu.Game.Utils
 
         private static bool checkValid(IEnumerable<Mod> mods, Predicate<Mod> valid, [NotNullWhen(false)] out List<Mod>? invalidMods)
         {
-            mods = mods.ToArray();
-            invalidMods = null;
-
-            foreach (var mod in mods)
-            {
-                if (!valid(mod))
-                {
-                    invalidMods ??= new List<Mod>();
-                    invalidMods.Add(mod);
-                }
-            }
-
-            return invalidMods == null;
+            invalidMods = null; return true;
         }
 
         /// <summary>

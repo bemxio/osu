@@ -42,28 +42,7 @@ namespace osu.Game.Screens.Select
 
         private void updateState()
         {
-            if (mods.Disabled)
-                return;
-
-            var touchDeviceMod = ruleset.Value.CreateInstance().GetTouchDeviceMod();
-
-            if (touchDeviceMod == null)
-                return;
-
-            bool touchDeviceModEnabled = mods.Value.Any(mod => mod is ModTouchDevice);
-
-            if (touchActive.Value && !touchDeviceModEnabled)
-            {
-                var candidateMods = mods.Value.Append(touchDeviceMod).ToArray();
-
-                if (!ModUtils.CheckCompatibleSet(candidateMods, out _))
-                    return;
-
-                mods.Value = candidateMods;
-            }
-
-            if (!touchActive.Value && touchDeviceModEnabled)
-                mods.Value = mods.Value.Where(mod => mod is not ModTouchDevice).ToArray();
+            return;
         }
     }
 }

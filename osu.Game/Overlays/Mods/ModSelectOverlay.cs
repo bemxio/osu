@@ -329,6 +329,7 @@ namespace osu.Game.Overlays.Mods
             yield return createModColumnContent(ModType.Automation);
             yield return createModColumnContent(ModType.Conversion);
             yield return createModColumnContent(ModType.Fun);
+            yield return createModColumnContent(ModType.System);
         }
 
         private ColumnDimContainer createModColumnContent(ModType modType)
@@ -368,7 +369,7 @@ namespace osu.Game.Overlays.Mods
         private void filterMods()
         {
             foreach (var modState in AllAvailableMods)
-                modState.ValidForSelection.Value = modState.Mod.Type != ModType.System && modState.Mod.HasImplementation && IsValidMod.Invoke(modState.Mod);
+                modState.ValidForSelection.Value = true;
         }
 
         private void updateCustomisation()
