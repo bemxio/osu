@@ -172,7 +172,9 @@ namespace osu.Game.Rulesets.Taiko
                 case ModType.System:
                     return new Mod[]
                     {
+                        new ModTouchDevice(),
                         new ModScoreV2(),
+                        new ModNoMod(),
                     };
 
                 default:

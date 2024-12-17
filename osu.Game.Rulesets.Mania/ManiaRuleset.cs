@@ -296,7 +296,9 @@ namespace osu.Game.Rulesets.Mania
                 case ModType.System:
                     return new Mod[]
                     {
+                        new ModTouchDevice(),
                         new ModScoreV2(),
+                        new ModNoMod(),
                     };
 
                 default:
