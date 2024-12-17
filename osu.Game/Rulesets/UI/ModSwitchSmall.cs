@@ -7,6 +7,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Logging;
 using osu.Framework.Utils;
 using osu.Game.Graphics;
 using osu.Game.Overlays;
@@ -106,6 +107,8 @@ namespace osu.Game.Rulesets.UI
         {
             modIcon?.FadeColour(Active.Value ? activeForegroundColour : inactiveForegroundColour, 200, Easing.OutQuint);
             background.FadeColour(Active.Value ? activeBackgroundColour : inactiveBackgroundColour, 200, Easing.OutQuint);
+
+            Logger.Log($"ModSwitchSmall updateState called for {mod.Name}: Active = {Active.Value}", LoggingTarget.Runtime, LogLevel.Debug);
         }
     }
 }
