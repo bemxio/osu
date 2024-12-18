@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
+using osu.Game.Beatmaps;
 using osu.Game.Graphics;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Objects;
@@ -42,7 +43,7 @@ namespace osu.Game.Rulesets.Osu.Mods
         public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
         {
             inputManager = ((DrawableOsuRuleset)drawableRuleset).KeyBindingInputManager;
-            replayFrames = new OsuAutoGenerator(drawableRuleset.Beatmap, drawableRuleset.Mods).Generate().Frames.Cast<OsuReplayFrame>().ToList();
+            replayFrames = new HRXOsuAutoGenerator(drawableRuleset.Beatmap, drawableRuleset.Mods).Generate().Frames.Cast<OsuReplayFrame>().ToList();
         }
         
         public void Update(Playfield playfield)
@@ -59,9 +60,22 @@ namespace osu.Game.Rulesets.Osu.Mods
 
             if (Math.Abs(nextFrame.Time - time) <= Math.Abs(currentFrame.Time - time))
             {
-                new ReplayState<OsuAction> { PressedActions = currentFrame.Actions }.Apply(inputManager.CurrentState, inputManager);
+                new ReplayState<OsuAction> { 
+                    PressedActions = currentFrame.Actions
+                }.Apply(inputManager.CurrentState, inputManager);
+
                 currentFrameIndex++;
             }
+        }
+
+        private class HRXOsuAutoGenerator : OsuAutoGenerator
+        {
+            public HRXOsuAutoGenerator(IBeatmap beatmap, IReadOnlyList<Mod> mods)
+                : base(beatmap, mods)
+            {
+            }
+
+            public new const double KEY_UP_DELAY = 100;
         }
     }
 }
