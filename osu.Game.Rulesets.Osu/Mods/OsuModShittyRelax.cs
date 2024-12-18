@@ -17,11 +17,11 @@ using static osu.Game.Input.Handlers.ReplayInputHandler;
 
 namespace osu.Game.Rulesets.Osu.Mods
 {
-    public class OsuModHumanRelax : Mod, IApplicableToDrawableRuleset<OsuHitObject>, IUpdatableByPlayfield
+    public class OsuModShittyRelax : Mod, IApplicableToDrawableRuleset<OsuHitObject>, IUpdatableByPlayfield
     {
-        public override string Name => "Human Relax";
-        public override string Acronym => "HRX";
-        public override LocalisableString Description => "Relax, but for cheaters.";
+        public override string Name => "Shitty Relax";
+        public override string Acronym => "SRX";
+        public override LocalisableString Description => "A worse implementation of the Relax mod.";
         public override double ScoreMultiplier => 1;
         public override IconUsage? Icon => OsuIcon.ModRelax;
         public override ModType Type => ModType.Automation;
@@ -43,7 +43,7 @@ namespace osu.Game.Rulesets.Osu.Mods
         public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
         {
             inputManager = ((DrawableOsuRuleset)drawableRuleset).KeyBindingInputManager;
-            replayFrames = new HRXOsuAutoGenerator(drawableRuleset.Beatmap, drawableRuleset.Mods).Generate().Frames.Cast<OsuReplayFrame>().ToList();
+            replayFrames = new SRXOsuAutoGenerator(drawableRuleset.Beatmap, drawableRuleset.Mods).Generate().Frames.Cast<OsuReplayFrame>().ToList();
         }
         
         public void Update(Playfield playfield)
@@ -68,9 +68,9 @@ namespace osu.Game.Rulesets.Osu.Mods
             }
         }
 
-        private class HRXOsuAutoGenerator : OsuAutoGenerator
+        private class SRXOsuAutoGenerator : OsuAutoGenerator
         {
-            public HRXOsuAutoGenerator(IBeatmap beatmap, IReadOnlyList<Mod> mods)
+            public SRXOsuAutoGenerator(IBeatmap beatmap, IReadOnlyList<Mod> mods)
                 : base(beatmap, mods)
             {
             }
