@@ -192,6 +192,7 @@ namespace osu.Game.Rulesets.Osu
                     {
                         new MultiMod(new OsuModAutoplay(), new OsuModCinema()),
                         new OsuModRelax(),
+                        new OsuModHumanRelax(),
                         new OsuModAutopilot(),
                         new OsuModSpunOut(),
                     };
