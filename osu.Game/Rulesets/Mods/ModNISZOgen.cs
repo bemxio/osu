@@ -4,7 +4,6 @@
 using System;
 using osu.Framework.Localisation;
 using osu.Game.Rulesets.Scoring;
-//using osu.Game.Scoring;
 
 namespace osu.Game.Rulesets.Mods
 {
@@ -15,8 +14,9 @@ namespace osu.Game.Rulesets.Mods
         public override LocalisableString Description => "200ms to nie są 2 sekundy?";
         public override double ScoreMultiplier => 1;
         public override ModType Type => ModType.Bemmy;
+        public override IconUsage? Icon => OsuIcon.ModPerfect;
         public override Type[] IncompatibleMods => new[] { typeof(ModNoFail), typeof(ModCinema) };
-    
+
         public void ApplyToHealthProcessor(HealthProcessor healthProcessor)
         {
             healthProcessor.TriggerFailure();
