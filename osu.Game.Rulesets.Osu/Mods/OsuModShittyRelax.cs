@@ -37,8 +37,9 @@ namespace osu.Game.Rulesets.Osu.Mods
         };
 
         private OsuInputManager inputManager = null!;
+
         private List<OsuReplayFrame> replayFrames = null!;
-        private int currentFrameIndex = 0;
+        private int currentFrame = -1;
 
         public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
         {
@@ -48,23 +49,20 @@ namespace osu.Game.Rulesets.Osu.Mods
         
         public void Update(Playfield playfield)
         {
-            if (currentFrameIndex == replayFrames.Count - 1)
+            if (currentFrame == replayFrames.Count - 1)
             {
                 return;
             }
 
-            OsuReplayFrame currentFrame = replayFrames[currentFrameIndex];
-            OsuReplayFrame nextFrame = replayFrames[currentFrameIndex + 1];
-
             double time = playfield.Clock.CurrentTime;
 
-            if (Math.Abs(nextFrame.Time - time) <= Math.Abs(currentFrame.Time - time))
+            if (currentFrame < 0 || Math.Abs(replayFrames[currentFrame + 1].Time - time) <= Math.Abs(replayFrames[currentFrame].Time - time))
             {
-                new ReplayState<OsuAction> { 
-                    PressedActions = currentFrame.Actions
-                }.Apply(inputManager.CurrentState, inputManager);
+                currentFrame++;
 
-                currentFrameIndex++;
+                new ReplayState<OsuAction> { 
+                    PressedActions = replayFrames[currentFrame].Actions
+                }.Apply(inputManager.CurrentState, inputManager); 
             }
         }
 
