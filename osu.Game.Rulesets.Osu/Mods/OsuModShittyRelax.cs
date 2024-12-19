@@ -24,7 +24,7 @@ namespace osu.Game.Rulesets.Osu.Mods
         public override LocalisableString Description => "A worse implementation of the Relax mod.";
         public override double ScoreMultiplier => 1;
         public override IconUsage? Icon => OsuIcon.ModRelax;
-        public override ModType Type => ModType.Automation;
+        public override ModType Type => ModType.Bemmy;
 
         public override Type[] IncompatibleMods => new[]
         {

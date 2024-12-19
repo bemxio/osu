@@ -149,7 +149,6 @@ namespace osu.Game.Rulesets.Catch
                         new CatchModFloatingFruits(),
                         new CatchModMuted(),
                         new CatchModNoScope(),
-                        new CatchModTransRights(),
                     };
 
                 case ModType.System:
@@ -157,7 +156,14 @@ namespace osu.Game.Rulesets.Catch
                     {
                         new ModTouchDevice(),
                         new ModScoreV2(),
-                        new ModNoMod(),
+                        new ModNoMod()
+                    };
+
+                case ModType.Bemmy:
+                    return new Mod[]
+                    {
+                        new CatchModTransRights(),
+                        new ModNISZOgen()
                     };
 
                 default:

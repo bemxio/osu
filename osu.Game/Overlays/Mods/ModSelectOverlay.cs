@@ -330,6 +330,7 @@ namespace osu.Game.Overlays.Mods
             yield return createModColumnContent(ModType.Conversion);
             yield return createModColumnContent(ModType.Fun);
             yield return createModColumnContent(ModType.System);
+            yield return createModColumnContent(ModType.Bemmy);
         }
 
         private ColumnDimContainer createModColumnContent(ModType modType)

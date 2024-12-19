@@ -291,7 +291,6 @@ namespace osu.Game.Rulesets.Mania
                         new MultiMod(new ModWindUp(), new ModWindDown()),
                         new ManiaModMuted(),
                         new ModAdaptiveSpeed(),
-                        new ManiaModTransRights()
                     };
 
                 case ModType.System:
@@ -299,7 +298,14 @@ namespace osu.Game.Rulesets.Mania
                     {
                         new ModTouchDevice(),
                         new ModScoreV2(),
-                        new ModNoMod(),
+                        new ModNoMod()
+                    };
+
+                case ModType.Bemmy:
+                    return new Mod[]
+                    {
+                        new ManiaModTransRights(),
+                        new ModNISZOgen()
                     };
 
                 default:

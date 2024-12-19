@@ -191,7 +191,7 @@ namespace osu.Game.Rulesets.Osu
                     return new Mod[]
                     {
                         new MultiMod(new OsuModAutoplay(), new OsuModCinema()),
-                        new MultiMod(new OsuModRelax(), new OsuModShittyRelax()),
+                        new OsuModRelax(),
                         new OsuModAutopilot(),
                         new OsuModSpunOut(),
                     };
@@ -216,8 +216,6 @@ namespace osu.Game.Rulesets.Osu
                         new OsuModSynesthesia(),
                         new OsuModDepth(),
                         new OsuModBloom(),
-                        new OsuModTransRights(),
-                        new ModNISZOgen()
                     };
 
                 case ModType.System:
@@ -225,7 +223,15 @@ namespace osu.Game.Rulesets.Osu
                     {
                         new OsuModTouchDevice(),
                         new ModScoreV2(),
-                        new ModNoMod(),
+                        new ModNoMod()
+                    };
+
+                case ModType.Bemmy:
+                    return new Mod[]
+                    {
+                        new OsuModTransRights(),
+                        new ModNISZOgen(),
+                        new OsuModShittyRelax()
                     };
 
                 default:

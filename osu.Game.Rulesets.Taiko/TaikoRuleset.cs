@@ -167,8 +167,6 @@ namespace osu.Game.Rulesets.Taiko
                         new MultiMod(new ModWindUp(), new ModWindDown()),
                         new TaikoModMuted(),
                         new ModAdaptiveSpeed(),
-                        new TaikoModTransRights(),
-                        new ModNISZOgen()
                     };
 
                 case ModType.System:
@@ -176,7 +174,14 @@ namespace osu.Game.Rulesets.Taiko
                     {
                         new ModTouchDevice(),
                         new ModScoreV2(),
-                        new ModNoMod(),
+                        new ModNoMod()
+                    };
+
+                case ModType.Bemmy:
+                    return new Mod[]
+                    {
+                        new TaikoModTransRights(),
+                        new ModNISZOgen()
                     };
 
                 default:

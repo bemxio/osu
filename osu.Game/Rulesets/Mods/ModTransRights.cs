@@ -18,7 +18,7 @@ namespace osu.Game.Rulesets.Mods
         public override string Acronym => "TRS";
         public override LocalisableString Description => "TRANS RIGHTS ARE HUMAN RIGHTS";
         public override double ScoreMultiplier => 1;
-        public override ModType Type => ModType.Fun;
+        public override ModType Type => ModType.Bemmy;
 
         [SettingSource("Flag transparency", "The transparency of the transgender flag overlay")]
         public BindableFloat Transparency { get; } = new BindableFloat(0.5f)

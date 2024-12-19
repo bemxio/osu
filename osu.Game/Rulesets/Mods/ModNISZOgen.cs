@@ -14,7 +14,7 @@ namespace osu.Game.Rulesets.Mods
         public override string Acronym => "NGN";
         public override LocalisableString Description => "200ms to nie są 2 sekundy?";
         public override double ScoreMultiplier => 1;
-        public override ModType Type => ModType.Fun;
+        public override ModType Type => ModType.Bemmy;
         public override Type[] IncompatibleMods => new[] { typeof(ModNoFail), typeof(ModCinema) };
     
         public void ApplyToHealthProcessor(HealthProcessor healthProcessor)
