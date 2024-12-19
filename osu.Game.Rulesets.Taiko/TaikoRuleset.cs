@@ -167,7 +167,7 @@ namespace osu.Game.Rulesets.Taiko
                         new MultiMod(new ModWindUp(), new ModWindDown()),
                         new TaikoModMuted(),
                         new ModAdaptiveSpeed(),
-                        new ModTransRights()
+                        new TaikoModTransRights()
                     };
 
                 case ModType.System:

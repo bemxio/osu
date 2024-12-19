@@ -216,7 +216,7 @@ namespace osu.Game.Rulesets.Osu
                         new OsuModSynesthesia(),
                         new OsuModDepth(),
                         new OsuModBloom(),
-                        new ModTransRights()
+                        new OsuModTransRights()
                     };
 
                 case ModType.System:
