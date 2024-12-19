@@ -11,7 +11,7 @@ namespace osu.Game.Rulesets.Catch.Mods
     {
         public void ApplyToDrawableRuleset(DrawableRuleset<CatchHitObject> drawableRuleset)
         {
-            drawableRuleset.Overlays.Add(new DrawableTransFlag(this.Transparency.Value));
+            drawableRuleset.Overlays.Add(new DrawableTransFlag(Transparency.Value));
         }
     }
 }

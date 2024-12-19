@@ -11,7 +11,7 @@ namespace osu.Game.Rulesets.Osu.Mods
     {
         public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
         {
-            drawableRuleset.Overlays.Add(new DrawableTransFlag(this.Transparency.Value));
+            drawableRuleset.Overlays.Add(new DrawableTransFlag(Transparency.Value));
         }
     }
 }

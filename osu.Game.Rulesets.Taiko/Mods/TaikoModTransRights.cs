@@ -11,7 +11,7 @@ namespace osu.Game.Rulesets.Taiko.Mods
     {
         public void ApplyToDrawableRuleset(DrawableRuleset<TaikoHitObject> drawableRuleset)
         {
-            drawableRuleset.Overlays.Add(new DrawableTransFlag(this.Transparency.Value));
+            drawableRuleset.Overlays.Add(new DrawableTransFlag(Transparency.Value));
         }
     }
 }

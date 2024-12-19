@@ -2,10 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Bindables;
-using osu.Framework.Localisation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osuTK.Graphics;
 
@@ -16,12 +16,12 @@ namespace osu.Game.Rulesets.Mods
         public override string Name => "TRANS RIGHTS";
         public override string Acronym => "TRS";
         public override LocalisableString Description => "TRANS RIGHTS ARE HUMAN RIGHTS";
-        public override double ScoreMultiplier => 1;
+        public override double ScoreMultiplier => 1 + Transparency.Value * 0.15f;
         public override ModType Type => ModType.Bemmy;
         public override bool Ranked => Transparency.IsDefault;
 
         [SettingSource("Flag transparency", "The transparency of the transgender flag overlay")]
-        public override BindableNumber<double> Transparency { get; } = new BindableDouble(0.8f)
+        public BindableNumber<float> Transparency { get; } = new BindableFloat(0.5f)
         {
             MinValue = 0.01f,
             MaxValue = 1,
@@ -30,7 +30,7 @@ namespace osu.Game.Rulesets.Mods
 
         public partial class DrawableTransFlag : FillFlowContainer
         {
-            public DrawableTransFlag(double transparency)
+            public DrawableTransFlag(float transparency)
             {
                 RelativeSizeAxes = Axes.Both;
                 Direction = FillDirection.Vertical;
