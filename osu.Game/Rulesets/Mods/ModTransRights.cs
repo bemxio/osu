@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -16,14 +17,14 @@ namespace osu.Game.Rulesets.Mods
         public override string Name => "TRANS RIGHTS";
         public override string Acronym => "TRS";
         public override LocalisableString Description => "TRANS RIGHTS ARE HUMAN RIGHTS";
-        public override double ScoreMultiplier => 1 + Transparency.Value * 0.15f;
+        public override double ScoreMultiplier => 1 + Math.Round(Transparency.Value * 0.15f, 2, MidpointRounding.ToZero);
         public override ModType Type => ModType.Bemmy;
         public override bool Ranked => Transparency.IsDefault;
 
         [SettingSource("Flag transparency", "The transparency of the transgender flag overlay")]
         public BindableNumber<float> Transparency { get; } = new BindableFloat(0.5f)
         {
-            MinValue = 0.01f,
+            MinValue = 0,
             MaxValue = 1,
             Precision = 0.01f
         };
