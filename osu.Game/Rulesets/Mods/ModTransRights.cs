@@ -21,7 +21,7 @@ namespace osu.Game.Rulesets.Mods
         public override ModType Type => ModType.Bemmy;
         public override bool Ranked => Transparency.IsDefault;
 
-        [SettingSource("Flag transparency", "The transparency of the transgender flag overlay")]
+        [SettingSource("Flag transparency", "The transparency of the transgender flag overlay.")]
         public BindableNumber<float> Transparency { get; } = new BindableFloat(0.5f)
         {
             MinValue = 0,

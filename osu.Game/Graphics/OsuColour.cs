@@ -173,7 +173,7 @@ namespace osu.Game.Graphics
                     return Yellow;
 
                 case ModType.Bemmy:
-                    return Color4Extensions.FromHex(@"964b00");
+                    return Color4.Chocolate;
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(modType), modType, "Unknown mod type");
