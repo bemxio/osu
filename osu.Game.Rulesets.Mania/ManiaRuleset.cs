@@ -305,6 +305,7 @@ namespace osu.Game.Rulesets.Mania
                     return new Mod[]
                     {
                         new ManiaModTransRights(),
+                        new ModMultiplierAdjust(),
                         new ModNISZOgen()
                     };
 

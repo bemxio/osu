@@ -163,6 +163,7 @@ namespace osu.Game.Rulesets.Catch
                     return new Mod[]
                     {
                         new CatchModTransRights(),
+                        new ModMultiplierAdjust(),
                         new ModNISZOgen()
                     };
 

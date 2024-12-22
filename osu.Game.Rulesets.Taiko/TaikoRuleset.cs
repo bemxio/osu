@@ -181,6 +181,7 @@ namespace osu.Game.Rulesets.Taiko
                     return new Mod[]
                     {
                         new TaikoModTransRights(),
+                        new ModMultiplierAdjust(),
                         new ModNISZOgen()
                     };
 

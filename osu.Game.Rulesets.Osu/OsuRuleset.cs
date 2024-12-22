@@ -231,6 +231,7 @@ namespace osu.Game.Rulesets.Osu
                     {
                         new OsuModTransRights(),
                         new ModNISZOgen(),
+                        new ModMultiplierAdjust(),
                         new OsuModShittyRelax()
                     };
 
