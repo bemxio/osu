@@ -8,6 +8,7 @@ using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Overlays.Settings;
+using System;
 
 namespace osu.Game.Rulesets.Mods
 {
@@ -20,10 +21,12 @@ namespace osu.Game.Rulesets.Mods
         public override LocalisableString Description => "Less zoom...";
         public override bool Ranked => SpeedChange.IsDefault;
 
-        [SettingSource("Speed decrease", "The actual decrease to apply", SettingControlType = typeof(MultiplierSettingsSlider))]
+        private readonly RateAdjustModHelper rateAdjustHelper;
+
+        [SettingSource("Speed decrease", "The actual decrease to apply (enable 'Adjust Pitch' for speeds below 0.06x)", SettingControlType = typeof(MultiplierSettingsSlider))]
         public override BindableNumber<double> SpeedChange { get; } = new BindableDouble(0.75)
         {
-            MinValue = 0.5,
+            MinValue = 0.06,
             MaxValue = 0.99,
             Precision = 0.01,
         };
@@ -31,10 +34,22 @@ namespace osu.Game.Rulesets.Mods
         [SettingSource("Adjust pitch", "Should pitch be adjusted with speed")]
         public virtual BindableBool AdjustPitch { get; } = new BindableBool();
 
-        private readonly RateAdjustModHelper rateAdjustHelper;
+        private void OnAdjustPitchValueChanged(ValueChangedEvent<bool> e)
+        {
+            if (e.NewValue)
+            {
+                SpeedChange.MinValue = 0.01;
+            }
+            else
+            {
+                SpeedChange.MinValue = 0.06;
+            }
+        }
 
         protected ModHalfTime()
         {
+            AdjustPitch.BindValueChanged(OnAdjustPitchValueChanged);
+
             rateAdjustHelper = new RateAdjustModHelper(SpeedChange);
             rateAdjustHelper.HandleAudioAdjustments(AdjustPitch);
         }
@@ -44,6 +59,6 @@ namespace osu.Game.Rulesets.Mods
             rateAdjustHelper.ApplyToTrack(track);
         }
 
-        public override double ScoreMultiplier => rateAdjustHelper.ScoreMultiplier;
+        public override double ScoreMultiplier => Math.Max(rateAdjustHelper.ScoreMultiplier, 0);
     }
 }
