@@ -36,14 +36,7 @@ namespace osu.Game.Rulesets.Mods
 
         private void OnAdjustPitchValueChanged(ValueChangedEvent<bool> e)
         {
-            if (e.NewValue)
-            {
-                SpeedChange.MinValue = 0.01;
-            }
-            else
-            {
-                SpeedChange.MinValue = 0.06;
-            }
+            SpeedChange.MinValue = e.NewValue ? 0.01 : 0.06;
         }
 
         protected ModHalfTime()

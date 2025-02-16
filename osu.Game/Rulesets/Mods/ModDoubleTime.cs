@@ -20,6 +20,8 @@ namespace osu.Game.Rulesets.Mods
         public override LocalisableString Description => "Zoooooooooom...";
         public override bool Ranked => SpeedChange.IsDefault;
 
+        private readonly RateAdjustModHelper rateAdjustHelper;
+
         [SettingSource("Speed increase", "The actual increase to apply", SettingControlType = typeof(MultiplierSettingsSlider))]
         public override BindableNumber<double> SpeedChange { get; } = new BindableDouble(1.5)
         {
@@ -31,10 +33,19 @@ namespace osu.Game.Rulesets.Mods
         [SettingSource("Adjust pitch", "Should pitch be adjusted with speed")]
         public virtual BindableBool AdjustPitch { get; } = new BindableBool();
 
-        private readonly RateAdjustModHelper rateAdjustHelper;
+        [SettingSource("Extended Limits", "Adjust speed beyond playable limits.")]
+        public BindableBool ExtendedLimits { get; } = new BindableBool();
+
+        private void OnExtendedLimitsValueChanged(ValueChangedEvent<bool> e)
+        {
+            SpeedChange.MaxValue = e.NewValue ? 25 : 2.5;
+            SpeedChange.Precision = e.NewValue ? 0.1 : 0.01;
+        }
 
         protected ModDoubleTime()
         {
+            ExtendedLimits.BindValueChanged(OnExtendedLimitsValueChanged);
+
             rateAdjustHelper = new RateAdjustModHelper(SpeedChange);
             rateAdjustHelper.HandleAudioAdjustments(AdjustPitch);
         }
