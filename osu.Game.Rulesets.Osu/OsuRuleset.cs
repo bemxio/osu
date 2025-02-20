@@ -229,10 +229,11 @@ namespace osu.Game.Rulesets.Osu
                 case ModType.Bemmy:
                     return new Mod[]
                     {
-                        new OsuModTransRights(),
-                        new ModNISZOgen(),
                         new ModMultiplierAdjust(),
-                        new OsuModShittyRelax()
+                        new ModNISZOgen(),
+                        new OsuModTransRights(),
+                        new OsuModShittyRelax(),
+                        new OsuModSliderStreams()
                     };
 
                 default:

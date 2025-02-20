@@ -163,9 +163,9 @@ namespace osu.Game.Rulesets.Catch
                 case ModType.Bemmy:
                     return new Mod[]
                     {
-                        new CatchModTransRights(),
                         new ModMultiplierAdjust(),
-                        new ModNISZOgen()
+                        new ModNISZOgen(),
+                        new CatchModTransRights()
                     };
 
                 default:

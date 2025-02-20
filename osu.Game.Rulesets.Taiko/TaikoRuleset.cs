@@ -180,9 +180,9 @@ namespace osu.Game.Rulesets.Taiko
                 case ModType.Bemmy:
                     return new Mod[]
                     {
-                        new TaikoModTransRights(),
                         new ModMultiplierAdjust(),
-                        new ModNISZOgen()
+                        new ModNISZOgen(),
+                        new TaikoModTransRights()
                     };
 
                 default:

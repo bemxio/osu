@@ -304,9 +304,9 @@ namespace osu.Game.Rulesets.Mania
                 case ModType.Bemmy:
                     return new Mod[]
                     {
-                        new ManiaModTransRights(),
                         new ModMultiplierAdjust(),
-                        new ModNISZOgen()
+                        new ModNISZOgen(),
+                        new ManiaModTransRights()
                     };
 
                 default:
