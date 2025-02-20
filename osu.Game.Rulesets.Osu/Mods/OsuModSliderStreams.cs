@@ -32,22 +32,24 @@ namespace osu.Game.Rulesets.Osu.Mods
             {
                 if (hitObject is Slider slider)
                 {
-                    double circleAmount = osuBeatmap.BeatmapInfo.BPM * (slider.Duration / 60000) * 4;
+                    double circleAmount = Math.Max(1.0, Math.Round(osuBeatmap.BeatmapInfo.BPM * (slider.Duration / 60000) * 4));
 
-                    for (double i = 0; i <= circleAmount; i++)
+                    for (int i = 0; i <= circleAmount; i++)
                     {
+                        double progress = i / circleAmount;
+
                         HitCircle hitCircle = new HitCircle
                         {
-                            StartTime = slider.StartTime + slider.Duration * (i / circleAmount),
-                            Position = slider.StackedPositionAt(i / circleAmount),
+                            StartTime = slider.StartTime + (slider.Duration * progress),
+                            Position = slider.StackedPositionAt(progress),
                             Samples = slider.Samples,
                             ComboOffset = slider.ComboOffset,
                             IndexInCurrentCombo = slider.IndexInCurrentCombo,
                             ComboIndex = slider.ComboIndex,
                             ComboIndexWithOffsets = slider.ComboIndexWithOffsets,
                         };
-
                         hitCircle.ApplyDefaults(osuBeatmap.ControlPointInfo, osuBeatmap.Difficulty);
+
                         newHitObjects.Add(hitCircle);
                     }
                 }
