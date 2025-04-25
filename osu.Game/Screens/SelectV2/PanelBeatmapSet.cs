@@ -11,22 +11,23 @@ using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osu.Game.Graphics;
+using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays;
 using osuTK;
 
 namespace osu.Game.Screens.SelectV2
 {
-    public partial class PanelBeatmapSet : PanelBase
+    public partial class PanelBeatmapSet : Panel
     {
-        public const float HEIGHT = CarouselItem.DEFAULT_HEIGHT * 1.6f;
+        public const float HEIGHT = CarouselItem.DEFAULT_HEIGHT * 1.7f;
 
-        private BeatmapSetPanelBackground background = null!;
+        private PanelSetBackground background = null!;
 
         private OsuSpriteText titleText = null!;
         private OsuSpriteText artistText = null!;
         private Drawable chevronIcon = null!;
-        private UpdateBeatmapSetButton updateButton = null!;
+        private PanelUpdateBeatmapButton updateButton = null!;
         private BeatmapSetOnlineStatusPill statusPill = null!;
         private DifficultySpectrumDisplay difficultiesDisplay = null!;
 
@@ -48,19 +49,19 @@ namespace osu.Game.Screens.SelectV2
 
             Icon = chevronIcon = new Container
             {
-                Size = new Vector2(22),
+                Size = new Vector2(0, 22),
                 Child = new SpriteIcon
                 {
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
                     Icon = FontAwesome.Solid.ChevronRight,
-                    Size = new Vector2(12),
+                    Size = new Vector2(8),
                     X = 1f,
                     Colour = colourProvider.Background5,
                 },
             };
 
-            Background = background = new BeatmapSetPanelBackground
+            Background = background = new PanelSetBackground
             {
                 RelativeSizeAxes = Axes.Both,
             };
@@ -76,20 +77,20 @@ namespace osu.Game.Screens.SelectV2
                     {
                         titleText = new OsuSpriteText
                         {
-                            Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 22, italics: true),
+                            Font = OsuFont.Style.Heading1.With(typeface: Typeface.TorusAlternate),
                         },
                         artistText = new OsuSpriteText
                         {
-                            Font = OsuFont.GetFont(weight: FontWeight.SemiBold, size: 17, italics: true),
+                            Font = OsuFont.Style.Body.With(weight: FontWeight.SemiBold),
                         },
                         new FillFlowContainer
                         {
                             Direction = FillDirection.Horizontal,
                             AutoSizeAxes = Axes.Both,
-                            Margin = new MarginPadding { Top = 5f },
+                            Margin = new MarginPadding { Top = 4f },
                             Children = new Drawable[]
                             {
-                                updateButton = new UpdateBeatmapSetButton
+                                updateButton = new PanelUpdateBeatmapButton
                                 {
                                     Anchor = Anchor.CentreLeft,
                                     Origin = Anchor.CentreLeft,
@@ -97,17 +98,13 @@ namespace osu.Game.Screens.SelectV2
                                 },
                                 statusPill = new BeatmapSetOnlineStatusPill
                                 {
-                                    AutoSizeAxes = Axes.Both,
                                     Origin = Anchor.CentreLeft,
                                     Anchor = Anchor.CentreLeft,
-                                    TextSize = 11,
-                                    TextPadding = new MarginPadding { Horizontal = 8, Vertical = 2 },
+                                    TextSize = OsuFont.Style.Caption2.Size,
                                     Margin = new MarginPadding { Right = 5f },
                                 },
                                 difficultiesDisplay = new DifficultySpectrumDisplay
                                 {
-                                    DotSize = new Vector2(5, 10),
-                                    DotSpacing = 2,
                                     Anchor = Anchor.CentreLeft,
                                     Origin = Anchor.CentreLeft,
                                 },
@@ -128,10 +125,16 @@ namespace osu.Game.Screens.SelectV2
 
         private void onExpanded()
         {
-            const float duration = 500;
-
-            chevronIcon.ResizeWidthTo(Expanded.Value ? 22 : 0f, duration, Easing.OutQuint);
-            chevronIcon.FadeTo(Expanded.Value ? 1f : 0f, duration, Easing.OutQuint);
+            if (Expanded.Value)
+            {
+                chevronIcon.ResizeWidthTo(18, 600, Easing.OutElasticQuarter);
+                chevronIcon.FadeTo(1f, DURATION, Easing.OutQuint);
+            }
+            else
+            {
+                chevronIcon.ResizeWidthTo(0f, DURATION, Easing.OutQuint);
+                chevronIcon.FadeTo(0f, DURATION, Easing.OutQuint);
+            }
         }
 
         protected override void PrepareForUse()

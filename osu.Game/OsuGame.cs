@@ -46,7 +46,9 @@ using osu.Game.Input.Bindings;
 using osu.Game.IO;
 using osu.Game.Localisation;
 using osu.Game.Online;
+using osu.Game.Online.API.Requests;
 using osu.Game.Online.Chat;
+using osu.Game.Online.Leaderboards;
 using osu.Game.Online.Rooms;
 using osu.Game.Overlays;
 using osu.Game.Overlays.BeatmapListing;
@@ -58,6 +60,7 @@ using osu.Game.Overlays.SkinEditor;
 using osu.Game.Overlays.Toolbar;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
+using osu.Game.Scoring.Legacy;
 using osu.Game.Screens;
 using osu.Game.Screens.Edit;
 using osu.Game.Screens.Footer;
@@ -67,6 +70,7 @@ using osu.Game.Screens.OnlinePlay.Multiplayer;
 using osu.Game.Screens.Play;
 using osu.Game.Screens.Ranking;
 using osu.Game.Screens.Select;
+using osu.Game.Screens.Select.Leaderboards;
 using osu.Game.Seasonal;
 using osu.Game.Skinning;
 using osu.Game.Updater;
@@ -100,7 +104,12 @@ namespace osu.Game
         /// <summary>
         /// A common shear factor applied to most components of the game.
         /// </summary>
-        public const float SHEAR = 0.2f;
+        public static readonly Vector2 SHEAR = new Vector2(0.2f, 0);
+
+        /// <summary>
+        /// For elements placed close to the screen edge, this is the margin to leave to the edge.
+        /// </summary>
+        public const float SCREEN_EDGE_MARGIN = 12f;
 
         public Toolbar Toolbar { get; private set; }
 
@@ -421,6 +430,7 @@ namespace osu.Game
 
             SelectedMods.BindValueChanged(modsChanged);
             Beatmap.BindValueChanged(beatmapChanged, true);
+            configUserActivity.BindValueChanged(_ => updateWindowTitle());
 
             applySafeAreaConsiderations = LocalConfig.GetBindable<bool>(OsuSetting.SafeAreaConsiderations);
             applySafeAreaConsiderations.BindValueChanged(apply => SafeAreaContainer.SafeAreaOverrideEdges = apply.NewValue ? SafeAreaOverrideEdges : Edges.All, true);
@@ -518,10 +528,10 @@ namespace osu.Game
             }
         });
 
-        public void CopyUrlToClipboard(string url) => waitForReady(() => onScreenDisplay, _ =>
+        public void CopyToClipboard(string value) => waitForReady(() => onScreenDisplay, _ =>
         {
-            dependencies.Get<Clipboard>().SetText(url);
-            onScreenDisplay.Display(new CopyUrlToast());
+            dependencies.Get<Clipboard>().SetText(value);
+            onScreenDisplay.Display(new CopiedToClipboardToast());
         });
 
         public void OpenUrlExternally(string url, LinkWarnMode warnMode = LinkWarnMode.Default) => waitForReady(() => externalLinkOpener, _ => externalLinkOpener.OpenUrlExternally(url, warnMode));
@@ -734,23 +744,33 @@ namespace osu.Game
         {
             Logger.Log($"Beginning {nameof(PresentScore)} with score {score}");
 
-            var databasedScore = ScoreManager.GetScore(score);
+            Score databasedScore;
+
+            try
+            {
+                databasedScore = ScoreManager.GetScore(score);
+            }
+            catch (LegacyScoreDecoder.BeatmapNotFoundException notFound)
+            {
+                Logger.Log("The replay cannot be played because the beatmap is missing.", LoggingTarget.Information);
+
+                var req = new GetBeatmapRequest(new BeatmapInfo { MD5Hash = notFound.Hash });
+                req.Success += res => Notifications.Post(new MissingBeatmapNotification(res, notFound.Hash, null));
+                API.Queue(req);
+
+                return;
+            }
 
             if (databasedScore == null) return;
 
             if (databasedScore.Replay == null)
             {
-                Logger.Log("The loaded score has no replay data.", LoggingTarget.Information);
+                Logger.Log("The loaded score has no replay data.", LoggingTarget.Information, LogLevel.Important);
                 return;
             }
 
-            var databasedBeatmap = BeatmapManager.QueryBeatmap(b => b.ID == databasedScore.ScoreInfo.BeatmapInfo.ID);
-
-            if (databasedBeatmap == null)
-            {
-                Logger.Log("Tried to load a score for a beatmap we don't have!", LoggingTarget.Information);
-                return;
-            }
+            var databasedBeatmap = databasedScore.ScoreInfo.BeatmapInfo;
+            Debug.Assert(databasedBeatmap != null);
 
             // This should be able to be performed from song select always, but that is disabled for now
             // due to the weird decoupled ruleset logic (which can cause a crash in certain filter scenarios).
@@ -782,6 +802,19 @@ namespace osu.Game
 
                 if (!Beatmap.Value.BeatmapInfo.Equals(databasedBeatmap))
                     Beatmap.Value = BeatmapManager.GetWorkingBeatmap(databasedBeatmap);
+
+                var currentLeaderboard = LeaderboardManager.CurrentCriteria;
+
+                bool leaderboardBeatmapMatches = currentLeaderboard != null && databasedBeatmap.Equals(currentLeaderboard.Beatmap);
+                bool leaderboardRulesetMatches = currentLeaderboard != null && databasedScore.ScoreInfo.Ruleset.Equals(currentLeaderboard.Ruleset);
+
+                if (!leaderboardBeatmapMatches || !leaderboardRulesetMatches)
+                {
+                    var newLeaderboard = currentLeaderboard != null
+                        ? currentLeaderboard with { Beatmap = databasedBeatmap, Ruleset = databasedScore.ScoreInfo.Ruleset }
+                        : new LeaderboardCriteria(databasedBeatmap, databasedScore.ScoreInfo.Ruleset, BeatmapLeaderboardScope.Global, null);
+                    LeaderboardManager.FetchWithCriteria(newLeaderboard);
+                }
 
                 switch (presentType)
                 {
@@ -828,6 +861,35 @@ namespace osu.Game
         {
             beatmap.OldValue?.CancelAsyncLoad();
             beatmap.NewValue?.BeginAsyncLoad();
+            updateWindowTitle();
+        }
+
+        private void updateWindowTitle()
+        {
+            if (Host.Window == null)
+                return;
+
+            string newTitle;
+
+            switch (configUserActivity.Value)
+            {
+                default:
+                    newTitle = Name;
+                    break;
+
+                case UserActivity.InGame:
+                case UserActivity.TestingBeatmap:
+                case UserActivity.WatchingReplay:
+                    newTitle = $"{Name} - {Beatmap.Value.BeatmapInfo.GetDisplayTitleRomanisable(true, false)}";
+                    break;
+
+                case UserActivity.EditingBeatmap:
+                    newTitle = $"{Name} - {Beatmap.Value.BeatmapInfo.Path ?? "new beatmap"}";
+                    break;
+            }
+
+            if (newTitle != Host.Window.Title)
+                Host.Window.Title = newTitle;
         }
 
         private void modsChanged(ValueChangedEvent<IReadOnlyList<Mod>> mods)
@@ -946,20 +1008,6 @@ namespace osu.Game
 
             MultiplayerClient.PostNotification = n => Notifications.Post(n);
             MultiplayerClient.PresentMatch = PresentMultiplayerMatch;
-
-            // make config aware of how to lookup skins for on-screen display purposes.
-            // if this becomes a more common thing, tracked settings should be reconsidered to allow local DI.
-            LocalConfig.LookupSkinName = id => SkinManager.Query(s => s.ID == id)?.ToString() ?? "Unknown";
-
-            LocalConfig.LookupKeyBindings = l =>
-            {
-                var combinations = KeyBindingStore.GetReadableKeyCombinationsFor(l);
-
-                if (combinations.Count == 0)
-                    return ToastStrings.NoKeyBound;
-
-                return string.Join(" / ", combinations);
-            };
 
             ScreenFooter.BackReceptor backReceptor;
 
