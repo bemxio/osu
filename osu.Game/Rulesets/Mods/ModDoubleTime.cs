@@ -55,8 +55,6 @@ namespace osu.Game.Rulesets.Mods
             }
         }
 
-        private readonly RateAdjustModHelper rateAdjustHelper;
-
         protected ModDoubleTime()
         {
             ExtendedLimits.BindValueChanged(OnExtendedLimitsValueChanged);

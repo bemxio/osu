@@ -52,8 +52,6 @@ namespace osu.Game.Rulesets.Mods
             }
         }
 
-        private readonly RateAdjustModHelper rateAdjustHelper;
-
         protected ModHalfTime()
         {
             AdjustPitch.BindValueChanged(OnAdjustPitchValueChanged);
