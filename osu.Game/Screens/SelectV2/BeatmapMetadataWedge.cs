@@ -1,18 +1,28 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using osu.Framework.Allocation;
+using osu.Framework.Audio;
+using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
+using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Logging;
+using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Database;
 using osu.Game.Graphics.Containers;
+using osu.Game.Localisation;
 using osu.Game.Online;
 using osu.Game.Online.API;
-using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Chat;
+using osu.Game.Resources.Localisation.Web;
 using osuTK;
 
 namespace osu.Game.Screens.SelectV2
@@ -23,7 +33,8 @@ namespace osu.Game.Screens.SelectV2
         private MetadataDisplay source = null!;
         private MetadataDisplay genre = null!;
         private MetadataDisplay language = null!;
-        private MetadataDisplay tag = null!;
+        private MetadataDisplay userTags = null!;
+        private MetadataDisplay mapperTags = null!;
         private MetadataDisplay submitted = null!;
         private MetadataDisplay ranked = null!;
 
@@ -35,6 +46,9 @@ namespace osu.Game.Screens.SelectV2
         private Drawable failRetryWedge = null!;
         private FailRetryDisplay failRetryDisplay = null!;
 
+        public bool RatingsVisible => ratingsWedge.Alpha > 0;
+        public bool FailRetryVisible => failRetryWedge.Alpha > 0;
+
         protected override bool StartHidden => true;
 
         [Resolved]
@@ -43,16 +57,25 @@ namespace osu.Game.Screens.SelectV2
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
 
+        [Resolved]
+        private RealmPopulatingOnlineLookupSource onlineLookupSource { get; set; } = null!;
+
+        [Resolved]
+        private RealmAccess realm { get; set; } = null!;
+
         private IBindable<APIState> apiState = null!;
 
         [Resolved]
         private ILinkHandler? linkHandler { get; set; }
 
         [Resolved]
-        private SongSelect? songSelect { get; set; }
+        private ISongSelect? songSelect { get; set; }
+
+        private Sample? wedgeAppearSample;
+        private Sample? wedgeHideSample;
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(AudioManager audio)
         {
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
@@ -92,6 +115,8 @@ namespace osu.Game.Screens.SelectV2
                                         AutoSizeAxes = Axes.Y,
                                         Direction = FillDirection.Vertical,
                                         Spacing = new Vector2(0f, 10f),
+                                        AutoSizeDuration = (float)transition_duration / 3,
+                                        AutoSizeEasing = Easing.OutQuint,
                                         Children = new Drawable[]
                                         {
                                             new GridContainer
@@ -117,8 +142,8 @@ namespace osu.Game.Screens.SelectV2
                                                             Spacing = new Vector2(0f, 10f),
                                                             Children = new[]
                                                             {
-                                                                creator = new MetadataDisplay("Creator"),
-                                                                genre = new MetadataDisplay("Genre"),
+                                                                creator = new MetadataDisplay(EditorSetupStrings.Creator),
+                                                                genre = new MetadataDisplay(BeatmapsetsStrings.ShowInfoGenre),
                                                             },
                                                         },
                                                         new FillFlowContainer
@@ -129,8 +154,8 @@ namespace osu.Game.Screens.SelectV2
                                                             Spacing = new Vector2(0f, 10f),
                                                             Children = new[]
                                                             {
-                                                                source = new MetadataDisplay("Source"),
-                                                                language = new MetadataDisplay("Language"),
+                                                                source = new MetadataDisplay(BeatmapsetsStrings.ShowInfoSource),
+                                                                language = new MetadataDisplay(BeatmapsetsStrings.ShowInfoLanguage),
                                                             },
                                                         },
                                                         new FillFlowContainer
@@ -141,14 +166,18 @@ namespace osu.Game.Screens.SelectV2
                                                             Spacing = new Vector2(0f, 10f),
                                                             Children = new[]
                                                             {
-                                                                submitted = new MetadataDisplay("Submitted"),
-                                                                ranked = new MetadataDisplay("Ranked"),
+                                                                submitted = new MetadataDisplay(SongSelectStrings.Submitted),
+                                                                ranked = new MetadataDisplay(SongSelectStrings.Ranked),
                                                             },
                                                         },
                                                     },
                                                 },
                                             },
-                                            tag = new MetadataDisplay("Tags"),
+                                            userTags = new MetadataDisplay(BeatmapsetsStrings.ShowInfoUserTags)
+                                            {
+                                                Alpha = 0,
+                                            },
+                                            mapperTags = new MetadataDisplay(BeatmapsetsStrings.ShowInfoMapperTags),
                                         },
                                     },
                                 },
@@ -216,6 +245,9 @@ namespace osu.Game.Screens.SelectV2
                     }),
                 }
             };
+
+            wedgeAppearSample = audio.Samples.Get(@"SongSelect/metadata-wedge-pop-in");
+            wedgeHideSample = audio.Samples.Get(@"SongSelect/metadata-wedge-pop-out");
         }
 
         protected override void LoadComplete()
@@ -250,8 +282,15 @@ namespace osu.Game.Screens.SelectV2
             // We could consider hiding individual wedges based on zero data in the future.
             // Needs some experimentation on what looks good.
 
-            if (State.Value == Visibility.Visible && currentOnlineBeatmapSet != null)
+            var beatmapInfo = beatmap.Value.BeatmapInfo;
+            var currentOnlineBeatmap = currentOnlineBeatmapSet?.Beatmaps.SingleOrDefault(b => b.OnlineID == beatmapInfo.OnlineID);
+
+            if (State.Value == Visibility.Visible && currentOnlineBeatmap != null)
             {
+                // play show sounds only if the wedges were previously hidden
+                if (ratingsWedge.Alpha < 1)
+                    playWedgeAppearSound();
+
                 ratingsWedge.FadeIn(transition_duration, Easing.OutQuint)
                             .MoveToX(0, transition_duration, Easing.OutQuint);
 
@@ -261,13 +300,49 @@ namespace osu.Game.Screens.SelectV2
             }
             else
             {
-                ratingsWedge.FadeOut(transition_duration, Easing.OutQuint)
-                            .MoveToX(-50, transition_duration, Easing.OutQuint);
+                // play hide sounds only if the wedges were previously visible
+                if (ratingsWedge.Alpha > 0)
+                    playWedgeHideSound();
 
-                failRetryWedge.Delay(100)
-                              .FadeOut(transition_duration, Easing.OutQuint)
+                failRetryWedge.FadeOut(transition_duration, Easing.OutQuint)
                               .MoveToX(-50, transition_duration, Easing.OutQuint);
+
+                ratingsWedge.Delay(100)
+                            .FadeOut(transition_duration, Easing.OutQuint)
+                            .MoveToX(-50, transition_duration, Easing.OutQuint);
             }
+        }
+
+        private void playWedgeAppearSound()
+        {
+            var wedgeAppearChannel1 = wedgeAppearSample?.GetChannel();
+            if (wedgeAppearChannel1 == null)
+                return;
+
+            wedgeAppearChannel1.Balance.Value = -OsuGameBase.SFX_STEREO_STRENGTH / 2;
+            wedgeAppearChannel1.Frequency.Value = 0.98f + RNG.NextDouble(0.04f);
+            wedgeAppearChannel1.Play();
+
+            Scheduler.AddDelayed(() =>
+            {
+                var wedgeAppearChannel2 = wedgeAppearSample?.GetChannel();
+                if (wedgeAppearChannel2 == null)
+                    return;
+
+                wedgeAppearChannel2.Balance.Value = -OsuGameBase.SFX_STEREO_STRENGTH / 2;
+                wedgeAppearChannel2.Frequency.Value = 0.90f + RNG.NextDouble(0.05f);
+                wedgeAppearChannel2.Play();
+            }, 100);
+        }
+
+        private void playWedgeHideSound()
+        {
+            var wedgeHideChannel = wedgeHideSample?.GetChannel();
+            if (wedgeHideChannel == null)
+                return;
+
+            wedgeHideChannel.Balance.Value = -OsuGameBase.SFX_STEREO_STRENGTH / 2;
+            wedgeHideChannel.Play();
         }
 
         private void updateDisplay()
@@ -282,7 +357,11 @@ namespace osu.Game.Screens.SelectV2
             else
                 source.Data = ("-", null);
 
-            tag.Tags = (metadata.Tags.Split(' '), t => songSelect?.Search(t));
+            if (!string.IsNullOrEmpty(metadata.Tags))
+                mapperTags.Tags = (metadata.Tags.Split(' '), t => songSelect?.Search(t));
+            else
+                mapperTags.Tags = (Array.Empty<string>(), _ => { });
+
             submitted.Date = beatmapSetInfo.DateSubmitted;
             ranked.Date = beatmapSetInfo.DateRanked;
 
@@ -293,37 +372,38 @@ namespace osu.Game.Screens.SelectV2
         }
 
         private APIBeatmapSet? currentOnlineBeatmapSet;
-        private GetBeatmapSetRequest? currentRequest;
+        private CancellationTokenSource? cancellationTokenSource;
+        private Task<APIBeatmapSet?>? currentFetchTask;
 
         private void refetchBeatmapSet()
         {
             var beatmapSetInfo = beatmap.Value.BeatmapSetInfo;
 
-            currentRequest?.Cancel();
-            currentRequest = null;
+            cancellationTokenSource?.Cancel();
             currentOnlineBeatmapSet = null;
 
             if (beatmapSetInfo.OnlineID >= 1)
             {
-                // todo: consider introducing a BeatmapSetLookupCache for caching benefits.
-                currentRequest = new GetBeatmapSetRequest(beatmapSetInfo.OnlineID);
-                currentRequest.Failure += _ => updateOnlineDisplay();
-                currentRequest.Success += s =>
+                cancellationTokenSource = new CancellationTokenSource();
+                currentFetchTask = onlineLookupSource.GetBeatmapSetAsync(beatmapSetInfo.OnlineID);
+                currentFetchTask.ContinueWith(t =>
                 {
-                    currentOnlineBeatmapSet = s;
-                    updateOnlineDisplay();
-                };
-
-                api.Queue(currentRequest);
+                    if (t.IsCompletedSuccessfully)
+                        currentOnlineBeatmapSet = t.GetResultSafely();
+                    if (t.Exception != null)
+                        Logger.Log($"Error when fetching online beatmap set: {t.Exception}", LoggingTarget.Network);
+                    Scheduler.AddOnce(updateOnlineDisplay);
+                });
             }
         }
 
         private void updateOnlineDisplay()
         {
-            if (currentRequest?.CompletionState == APIRequestCompletionState.Waiting)
+            if (currentFetchTask?.IsCompleted == false)
             {
                 genre.Data = null;
                 language.Data = null;
+                userTags.Tags = null;
                 return;
             }
 
@@ -351,7 +431,27 @@ namespace osu.Game.Screens.SelectV2
                 }
             }
 
+            updateUserTags();
             updateSubWedgeVisibility();
+        }
+
+        private void updateUserTags()
+        {
+            string[] tags = realm.Run(r =>
+            {
+                // need to refetch because `beatmap.Value.BeatmapInfo` is not going to have the latest tags
+                var refetchedBeatmap = r.Find<BeatmapInfo>(beatmap.Value.BeatmapInfo.ID);
+                return refetchedBeatmap?.Metadata.UserTags.ToArray() ?? [];
+            });
+
+            if (tags.Length == 0)
+            {
+                userTags.FadeOut(transition_duration, Easing.OutQuint);
+                return;
+            }
+
+            userTags.FadeIn(transition_duration, Easing.OutQuint);
+            userTags.Tags = (tags, t => songSelect?.Search($@"tag=""{t}""!"));
         }
     }
 }

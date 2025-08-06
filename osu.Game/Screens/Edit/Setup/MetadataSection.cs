@@ -25,6 +25,7 @@ namespace osu.Game.Screens.Edit.Setup
         private FormTextBox sourceTextBox = null!;
         private FormTextBox tagsTextBox = null!;
 
+        private bool reloading;
         private bool dirty;
 
         public override LocalisableString Title => EditorSetupStrings.MetadataHeader;
@@ -105,6 +106,8 @@ namespace osu.Game.Screens.Edit.Setup
 
         private void reloadMetadata()
         {
+            reloading = true;
+
             var metadata = Beatmap.Metadata;
 
             RomanisedArtistTextBox.ReadOnly = false;
@@ -113,17 +116,22 @@ namespace osu.Game.Screens.Edit.Setup
             ArtistTextBox.Current.Value = !string.IsNullOrEmpty(metadata.ArtistUnicode) ? metadata.ArtistUnicode : metadata.Artist;
             RomanisedArtistTextBox.Current.Value = !string.IsNullOrEmpty(metadata.Artist) ? metadata.Artist : MetadataUtils.StripNonRomanisedCharacters(metadata.ArtistUnicode);
             TitleTextBox.Current.Value = !string.IsNullOrEmpty(metadata.TitleUnicode) ? metadata.TitleUnicode : metadata.Title;
-            RomanisedTitleTextBox.Current.Value = !string.IsNullOrEmpty(metadata.Title) ? metadata.Title : MetadataUtils.StripNonRomanisedCharacters(metadata.ArtistUnicode);
+            RomanisedTitleTextBox.Current.Value = !string.IsNullOrEmpty(metadata.Title) ? metadata.Title : MetadataUtils.StripNonRomanisedCharacters(metadata.TitleUnicode);
             creatorTextBox.Current.Value = metadata.Author.Username;
             difficultyTextBox.Current.Value = Beatmap.BeatmapInfo.DifficultyName;
             sourceTextBox.Current.Value = metadata.Source;
             tagsTextBox.Current.Value = metadata.Tags;
 
             updateReadOnlyState();
+
+            reloading = false;
         }
 
         private void applyMetadata()
         {
+            if (reloading)
+                return;
+
             Beatmap.Metadata.ArtistUnicode = ArtistTextBox.Current.Value;
             Beatmap.Metadata.Artist = RomanisedArtistTextBox.Current.Value;
             Beatmap.Metadata.TitleUnicode = TitleTextBox.Current.Value;

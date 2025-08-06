@@ -25,8 +25,9 @@ namespace osu.Game.Screens.Footer
 {
     public partial class ScreenFooterButton : OsuClickableContainer, IKeyBindingHandler<GlobalAction>
     {
-        protected const int CORNER_RADIUS = 10;
-        protected const int BUTTON_HEIGHT = 75;
+        public const int CORNER_RADIUS = 10;
+
+        public const int HEIGHT = 75;
         protected const int BUTTON_WIDTH = 116;
 
         public Bindable<Visibility> OverlayState = new Bindable<Visibility>();
@@ -53,8 +54,11 @@ namespace osu.Game.Screens.Footer
 
         public LocalisableString Text
         {
+            get => text.Text;
             set => text.Text = value;
         }
+
+        private readonly Container shearedContent;
 
         private readonly SpriteText text;
         private readonly SpriteIcon icon;
@@ -71,11 +75,11 @@ namespace osu.Game.Screens.Footer
         {
             Overlay = overlay;
 
-            Size = new Vector2(BUTTON_WIDTH, BUTTON_HEIGHT);
+            Size = new Vector2(BUTTON_WIDTH, HEIGHT);
 
             Children = new Drawable[]
             {
-                new Container
+                shearedContent = new Container
                 {
                     EdgeEffect = new EdgeEffectParameters
                     {
@@ -168,8 +172,8 @@ namespace osu.Game.Screens.Footer
             FinishTransforms(true);
         }
 
-        // use Content for tracking input as some buttons might be temporarily hidden with DisappearToBottom, and they become hidden by moving Content away from screen.
-        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => Content.ReceivePositionalInputAt(screenSpacePos);
+        // account for shear and buttons temporarily hidden with DisappearToBottom.
+        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => shearedContent.ReceivePositionalInputAt(screenSpacePos);
 
         public GlobalAction? Hotkey;
 

@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
@@ -24,7 +25,11 @@ namespace osu.Game.Online.Leaderboards
 {
     public partial class LeaderboardManager : Component
     {
+        /// <summary>
+        /// The latest leaderboard scores fetched by the criteria in <see cref="CurrentCriteria"/>.
+        /// </summary>
         public IBindable<LeaderboardScores?> Scores => scores;
+
         private readonly Bindable<LeaderboardScores?> scores = new Bindable<LeaderboardScores?>();
 
         public LeaderboardCriteria? CurrentCriteria { get; private set; }
@@ -47,6 +52,9 @@ namespace osu.Game.Online.Leaderboards
         /// </summary>
         public void FetchWithCriteria(LeaderboardCriteria newCriteria, bool forceRefresh = false)
         {
+            if (!ThreadSafety.IsUpdateThread)
+                throw new InvalidOperationException(@$"{nameof(FetchWithCriteria)} must be called from the update thread.");
+
             if (!forceRefresh && CurrentCriteria?.Equals(newCriteria) == true && scores.Value?.FailState == null)
                 return;
 
@@ -76,6 +84,9 @@ namespace osu.Game.Online.Leaderboards
 
                 default:
                 {
+                    if (newCriteria.Sorting != LeaderboardSortMode.Score)
+                        throw new NotSupportedException($@"Requesting online scores with a {nameof(LeaderboardSortMode)} other than {nameof(LeaderboardSortMode.Score)} is not supported");
+
                     if (!api.IsLoggedIn)
                     {
                         scores.Value = LeaderboardScores.Failure(LeaderboardFailState.NotLoggedIn);
@@ -125,7 +136,15 @@ namespace osu.Game.Online.Leaderboards
 
                         var result = LeaderboardScores.Success
                         (
-                            response.Scores.Select(s => s.ToScoreInfo(rulesets, newCriteria.Beatmap)).OrderByTotalScore().ToArray(),
+                            response.Scores.Select(s => s.ToScoreInfo(rulesets, newCriteria.Beatmap))
+                                    .OrderByTotalScore()
+                                    .Select((s, idx) =>
+                                    {
+                                        s.Position = idx + 1;
+                                        return s;
+                                    })
+                                    .ToArray(),
+                            response.ScoresCount,
                             response.UserScore?.CreateScoreInfo(rulesets, newCriteria.Beatmap)
                         );
                         inFlightOnlineRequest = null;
@@ -172,9 +191,17 @@ namespace osu.Game.Online.Leaderboards
                 }
             }
 
-            newScores = newScores.Detach().OrderByTotalScore();
+            newScores = newScores.Detach().OrderByCriteria(CurrentCriteria.Sorting);
 
-            scores.Value = LeaderboardScores.Success(newScores.ToArray(), null);
+            var newScoresArray = newScores.ToArray();
+            scores.Value = LeaderboardScores.Success(newScoresArray, newScoresArray.Length, null);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            localScoreSubscription?.Dispose();
         }
     }
 
@@ -182,12 +209,14 @@ namespace osu.Game.Online.Leaderboards
         BeatmapInfo? Beatmap,
         RulesetInfo? Ruleset,
         BeatmapLeaderboardScope Scope,
-        Mod[]? ExactMods
+        Mod[]? ExactMods,
+        LeaderboardSortMode Sorting = LeaderboardSortMode.Score
     );
 
     public record LeaderboardScores
     {
         public ICollection<ScoreInfo> TopScores { get; }
+        public int TotalScores { get; }
         public ScoreInfo? UserScore { get; }
         public LeaderboardFailState? FailState { get; }
 
@@ -203,15 +232,16 @@ namespace osu.Game.Online.Leaderboards
             }
         }
 
-        private LeaderboardScores(ICollection<ScoreInfo> topScores, ScoreInfo? userScore, LeaderboardFailState? failState)
+        private LeaderboardScores(ICollection<ScoreInfo> topScores, int totalScores, ScoreInfo? userScore, LeaderboardFailState? failState)
         {
             TopScores = topScores;
+            TotalScores = totalScores;
             UserScore = userScore;
             FailState = failState;
         }
 
-        public static LeaderboardScores Success(ICollection<ScoreInfo> topScores, ScoreInfo? userScore) => new LeaderboardScores(topScores, userScore, null);
-        public static LeaderboardScores Failure(LeaderboardFailState failState) => new LeaderboardScores([], null, failState);
+        public static LeaderboardScores Success(ICollection<ScoreInfo> topScores, int totalScores, ScoreInfo? userScore) => new LeaderboardScores(topScores, totalScores, userScore, null);
+        public static LeaderboardScores Failure(LeaderboardFailState failState) => new LeaderboardScores([], 0, null, failState);
     }
 
     public enum LeaderboardFailState

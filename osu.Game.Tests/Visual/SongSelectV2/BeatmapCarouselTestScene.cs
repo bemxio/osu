@@ -4,9 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Extensions;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -20,6 +22,7 @@ using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Containers;
 using osu.Game.Overlays;
 using osu.Game.Screens.Select;
+using osu.Game.Screens.Select.Filter;
 using osu.Game.Screens.SelectV2;
 using osu.Game.Tests.Beatmaps;
 using osu.Game.Tests.Resources;
@@ -32,9 +35,12 @@ namespace osu.Game.Tests.Visual.SongSelectV2
 {
     public abstract partial class BeatmapCarouselTestScene : OsuManualInputManagerTestScene
     {
+        protected readonly Stack<BeatmapSetInfo> BeatmapSetRequestedSelections = new Stack<BeatmapSetInfo>();
+        protected readonly Stack<BeatmapInfo> BeatmapRequestedSelections = new Stack<BeatmapInfo>();
+
         protected readonly BindableList<BeatmapSetInfo> BeatmapSets = new BindableList<BeatmapSetInfo>();
 
-        protected BeatmapCarousel Carousel = null!;
+        protected TestBeatmapCarousel Carousel = null!;
 
         protected OsuScrollContainer<Drawable> Scroll => Carousel.ChildrenOfType<OsuScrollContainer<Drawable>>().Single();
 
@@ -44,9 +50,13 @@ namespace osu.Game.Tests.Visual.SongSelectV2
         [Cached]
         private readonly OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Aquamarine);
 
+        public Func<IEnumerable<BeatmapInfo>, BeatmapInfo>? BeatmapRecommendationFunction { get; set; }
+
         private OsuTextFlowContainer stats = null!;
 
         private int beatmapCount;
+
+        protected int NewItemsPresentedInvocationCount;
 
         protected BeatmapCarouselTestScene()
         {
@@ -64,6 +74,11 @@ namespace osu.Game.Tests.Visual.SongSelectV2
         {
             AddStep("create components", () =>
             {
+                BeatmapRequestedSelections.Clear();
+                BeatmapSetRequestedSelections.Clear();
+                BeatmapRecommendationFunction = null;
+                NewItemsPresentedInvocationCount = 0;
+
                 Box topBox;
                 Children = new Drawable[]
                 {
@@ -95,8 +110,19 @@ namespace osu.Game.Tests.Visual.SongSelectV2
                             },
                             new Drawable[]
                             {
-                                Carousel = new BeatmapCarousel
+                                Carousel = new TestBeatmapCarousel
                                 {
+                                    NewItemsPresented = _ => NewItemsPresentedInvocationCount++,
+                                    RequestSelection = b =>
+                                    {
+                                        BeatmapRequestedSelections.Push(b);
+                                        Carousel.CurrentSelection = b;
+                                    },
+                                    RequestRecommendedSelection = beatmaps =>
+                                    {
+                                        BeatmapSetRequestedSelections.Push(beatmaps.First().BeatmapSet!);
+                                        Carousel.CurrentSelection = BeatmapRecommendationFunction?.Invoke(beatmaps) ?? beatmaps.First();
+                                    },
                                     BleedTop = 50,
                                     BleedBottom = 50,
                                     Anchor = Anchor.Centre,
@@ -126,51 +152,152 @@ namespace osu.Game.Tests.Visual.SongSelectV2
                         TextAnchor = Anchor.CentreLeft,
                     },
                 };
+
+                // Prefer title sorting so that order of carousel panels match order of BeatmapSets bindable.
+                Carousel.Filter(new FilterCriteria { Sort = SortMode.Title });
             });
         }
 
-        protected void SortBy(FilterCriteria criteria) => AddStep($"sort:{criteria.Sort} group:{criteria.Group}", () => Carousel.Filter(criteria));
+        protected void SortBy(SortMode mode) => ApplyToFilterAndWaitForFilter($"sort by {mode.GetDescription().ToLowerInvariant()}", c => c.Sort = mode);
+
+        protected void GroupBy(GroupMode mode) => ApplyToFilterAndWaitForFilter($"group by {mode.GetDescription().ToLowerInvariant()}", c => c.Group = mode);
+
+        protected void SortAndGroupBy(SortMode sort, GroupMode group)
+        {
+            ApplyToFilterAndWaitForFilter($"sort by {sort.GetDescription().ToLowerInvariant()} & group by {group.GetDescription().ToLowerInvariant()}", c =>
+            {
+                c.Sort = sort;
+                c.Group = group;
+            });
+        }
+
+        protected void ApplyToFilterAndWaitForFilter(string description, Action<FilterCriteria>? apply)
+        {
+            AddStep(description, () =>
+            {
+                var criteria = Carousel.Criteria ?? new FilterCriteria();
+                apply?.Invoke(criteria);
+                Carousel.Filter(criteria);
+            });
+
+            WaitForFiltering();
+        }
 
         protected void WaitForDrawablePanels() => AddUntilStep("drawable panels loaded", () => Carousel.ChildrenOfType<ICarouselPanel>().Count(), () => Is.GreaterThan(0));
-        protected void WaitForSorting() => AddUntilStep("sorting finished", () => Carousel.IsFiltering, () => Is.False);
+        protected void WaitForFiltering() => AddUntilStep("filtering finished", () => Carousel.IsFiltering, () => Is.False);
         protected void WaitForScrolling() => AddUntilStep("scroll finished", () => Scroll.Current, () => Is.EqualTo(Scroll.Target));
+
+        protected void ToggleGroupCollapse() => AddStep("toggle group collapse", () =>
+        {
+            InputManager.PressKey(Key.ShiftLeft);
+            InputManager.Key(Key.Enter);
+            InputManager.ReleaseKey(Key.ShiftLeft);
+        });
+
+        protected void SelectNextGroup() => AddStep("select next group", () =>
+        {
+            InputManager.PressKey(Key.ShiftLeft);
+            InputManager.Key(Key.Right);
+            InputManager.ReleaseKey(Key.ShiftLeft);
+        });
+
+        protected void SelectPrevGroup() => AddStep("select prev group", () =>
+        {
+            InputManager.PressKey(Key.ShiftLeft);
+            InputManager.Key(Key.Left);
+            InputManager.ReleaseKey(Key.ShiftLeft);
+        });
 
         protected void SelectNextPanel() => AddStep("select next panel", () => InputManager.Key(Key.Down));
         protected void SelectPrevPanel() => AddStep("select prev panel", () => InputManager.Key(Key.Up));
-        protected void SelectNextGroup() => AddStep("select next group", () => InputManager.Key(Key.Right));
-        protected void SelectPrevGroup() => AddStep("select prev group", () => InputManager.Key(Key.Left));
+        protected void SelectNextSet() => AddStep("select next set", () => InputManager.Key(Key.Right));
+        protected void SelectPrevSet() => AddStep("select prev set", () => InputManager.Key(Key.Left));
 
         protected void Select() => AddStep("select", () => InputManager.Key(Key.Enter));
 
         protected void CheckNoSelection() => AddAssert("has no selection", () => Carousel.CurrentSelection, () => Is.Null);
         protected void CheckHasSelection() => AddAssert("has selection", () => Carousel.CurrentSelection, () => Is.Not.Null);
 
+        protected void CheckRequestPresentCount(int expected) =>
+            AddAssert($"check present count is {expected}", () => Carousel.RequestPresentBeatmapCount, () => Is.EqualTo(expected));
+
+        protected void CheckActivationCount(int expected) =>
+            AddAssert($"check activation count is {expected}", () => Carousel.ActivationCount, () => Is.EqualTo(expected));
+
+        protected void CheckDisplayedBeatmapsCount(int expected)
+        {
+            AddAssert($"{expected} diffs displayed", () => Carousel.MatchedBeatmapsCount, () => Is.EqualTo(expected));
+        }
+
+        protected void CheckDisplayedBeatmapSetsCount(int expected)
+        {
+            AddAssert($"{expected} sets displayed", () =>
+            {
+                var groupingFilter = Carousel.Filters.OfType<BeatmapCarouselFilterGrouping>().Single();
+
+                // Using groupingFilter.SetItems.Count alone doesn't work.
+                // When sorting by difficulty, there can be more than one set panel for the same set displayed.
+                return groupingFilter.SetItems.Sum(s => s.Value.Count(i => i.Model is BeatmapSetInfo));
+            }, () => Is.EqualTo(expected));
+        }
+
+        protected void CheckDisplayedGroupsCount(int expected)
+        {
+            AddAssert($"{expected} groups displayed", () =>
+            {
+                var groupingFilter = Carousel.Filters.OfType<BeatmapCarouselFilterGrouping>().Single();
+                return groupingFilter.GroupItems.Count;
+            }, () => Is.EqualTo(expected));
+        }
+
         protected ICarouselPanel? GetSelectedPanel() => Carousel.ChildrenOfType<ICarouselPanel>().SingleOrDefault(p => p.Selected.Value);
         protected ICarouselPanel? GetKeyboardSelectedPanel() => Carousel.ChildrenOfType<ICarouselPanel>().SingleOrDefault(p => p.KeyboardSelected.Value);
 
-        protected void WaitForGroupSelection(int group, int panel)
+        protected void WaitForExpandedGroup(int group)
         {
-            AddUntilStep($"selected is group{group} panel{panel}", () =>
+            AddUntilStep($"group {group} is expanded", () =>
             {
                 var groupingFilter = Carousel.Filters.OfType<BeatmapCarouselFilterGrouping>().Single();
 
                 GroupDefinition g = groupingFilter.GroupItems.Keys.ElementAt(group);
                 // offset by one because the group itself is included in the items list.
-                CarouselItem item = groupingFilter.GroupItems[g].ElementAt(panel + 1);
+                CarouselItem item = groupingFilter.GroupItems[g].ElementAt(0);
 
-                return ReferenceEquals(Carousel.CurrentSelection, item.Model);
+                return item.Model is GroupDefinition def && def == Carousel.ExpandedGroup;
             });
         }
 
-        protected void WaitForSelection(int set, int? diff = null)
+        protected void WaitForBeatmapSelection(int group, int panel)
         {
-            AddUntilStep($"selected is set{set}{(diff.HasValue ? $" diff{diff.Value}" : "")}", () =>
+            AddUntilStep($"selected is group{group} panel{panel}", () =>
             {
-                if (diff != null)
-                    return ReferenceEquals(Carousel.CurrentSelection, BeatmapSets[set].Beatmaps[diff.Value]);
+                var groupingFilter = Carousel.Filters.OfType<BeatmapCarouselFilterGrouping>().Single();
 
-                return BeatmapSets[set].Beatmaps.Contains(Carousel.CurrentSelection);
+                GroupDefinition? groupDefinition = groupingFilter.GroupItems.Keys.ElementAtOrDefault(group);
+
+                if (groupDefinition == null)
+                    return false;
+
+                // offset by one because the group itself is included in the items list.
+                CarouselItem item = groupingFilter.GroupItems[groupDefinition].ElementAt(panel + 1);
+
+                return (Carousel.CurrentSelection as BeatmapInfo)?
+                    .Equals(item.Model as BeatmapInfo) == true;
             });
+        }
+
+        protected void WaitForSetSelection(int set, int? diff = null)
+        {
+            if (diff != null)
+            {
+                AddUntilStep($"selected is set{set} diff{diff.Value}",
+                    () => (Carousel.CurrentSelection as BeatmapInfo),
+                    () => Is.EqualTo(BeatmapSets[set].Beatmaps[diff.Value]));
+            }
+            else
+            {
+                AddUntilStep($"selected is set{set}", () => BeatmapSets[set].Beatmaps.Contains(Carousel.CurrentSelection));
+            }
         }
 
         protected IEnumerable<T> GetVisiblePanels<T>()
@@ -222,8 +349,12 @@ namespace osu.Game.Tests.Visual.SongSelectV2
         /// <param name="randomMetadata">Whether to randomise the metadata to make groupings more uniform.</param>
         protected void AddBeatmaps(int count, int? fixedDifficultiesPerSet = null, bool randomMetadata = false) => AddStep($"add {count} beatmaps{(randomMetadata ? " with random data" : "")}", () =>
         {
+            var beatmaps = new List<BeatmapSetInfo>();
+
             for (int i = 0; i < count; i++)
-                BeatmapSets.Add(CreateTestBeatmapSetInfo(fixedDifficultiesPerSet, randomMetadata));
+                beatmaps.Add(CreateTestBeatmapSetInfo(fixedDifficultiesPerSet, randomMetadata));
+
+            BeatmapSets.AddRange(beatmaps);
         });
 
         protected static BeatmapSetInfo CreateTestBeatmapSetInfo(int? fixedDifficultiesPerSet, bool randomMetadata)
@@ -280,7 +411,7 @@ namespace osu.Game.Tests.Visual.SongSelectV2
                                 """);
             createHeader("carousel");
             stats.AddParagraph($"""
-                                sorting: {Carousel.IsFiltering}
+                                filtering: {Carousel.IsFiltering} (total {Carousel.FilterCount} times)
                                 tracked: {Carousel.ItemsTracked}
                                 displayable: {Carousel.DisplayableItems}
                                 displayed: {Carousel.VisibleItems}
@@ -294,6 +425,44 @@ namespace osu.Game.Tests.Visual.SongSelectV2
                 {
                     cp.Font = cp.Font.With(size: 18, weight: FontWeight.Bold);
                 });
+            }
+        }
+
+        public partial class TestBeatmapCarousel : BeatmapCarousel
+        {
+            public int ActivationCount { get; private set; }
+            public int RequestPresentBeatmapCount { get; private set; }
+
+            public int FilterDelay = 0;
+
+            public IEnumerable<BeatmapInfo> PostFilterBeatmaps = null!;
+
+            public BeatmapInfo? SelectedBeatmapInfo => CurrentSelection as BeatmapInfo;
+            public BeatmapSetInfo? SelectedBeatmapSet => SelectedBeatmapInfo?.BeatmapSet;
+
+            public new BeatmapSetInfo? ExpandedBeatmapSet => base.ExpandedBeatmapSet;
+            public new GroupDefinition? ExpandedGroup => base.ExpandedGroup;
+
+            public TestBeatmapCarousel()
+            {
+                RequestPresentBeatmap = _ => RequestPresentBeatmapCount++;
+            }
+
+            protected override void HandleItemActivated(CarouselItem item)
+            {
+                ActivationCount++;
+                base.HandleItemActivated(item);
+            }
+
+            protected override async Task<IEnumerable<CarouselItem>> FilterAsync(bool clearExistingPanels = false)
+            {
+                var items = await base.FilterAsync(clearExistingPanels).ConfigureAwait(true);
+
+                if (FilterDelay != 0)
+                    await Task.Delay(FilterDelay).ConfigureAwait(true);
+
+                PostFilterBeatmaps = items.Select(i => i.Model).OfType<BeatmapInfo>();
+                return items;
             }
         }
     }

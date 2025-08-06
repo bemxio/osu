@@ -36,19 +36,21 @@ namespace osu.Game.Rulesets.Edit
 
             // Compose
             new CheckUnsnappedObjects(),
-            new CheckConcurrentObjects(),
             new CheckZeroLengthObjects(),
             new CheckDrainLength(),
             new CheckUnusedAudioAtEnd(),
 
             // Timing
             new CheckPreviewTime(),
+            new CheckInconsistentTimingControlPoints(),
 
             // Events
             new CheckBreaks(),
 
             // Metadata
             new CheckTitleMarkers(),
+            new CheckInconsistentMetadata(),
+            new CheckMissingGenreLanguage(),
         };
 
         public IEnumerable<Issue> Run(BeatmapVerifierContext context)

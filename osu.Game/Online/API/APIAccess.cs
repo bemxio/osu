@@ -72,6 +72,8 @@ namespace osu.Game.Online.API
         protected bool HasLogin => authentication.Token.Value != null || (!string.IsNullOrEmpty(ProvidedUsername) && !string.IsNullOrEmpty(password));
 
         private readonly Bindable<UserStatus> configStatus = new Bindable<UserStatus>();
+        private readonly Bindable<bool> configSupporter = new Bindable<bool>();
+
         private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
         private readonly Logger log;
 
@@ -104,6 +106,7 @@ namespace osu.Game.Online.API
             authentication.Token.ValueChanged += onTokenChanged;
 
             config.BindWith(OsuSetting.UserOnlineStatus, configStatus);
+            config.BindWith(OsuSetting.WasSupporter, configSupporter);
 
             if (HasLogin)
             {
@@ -333,6 +336,7 @@ namespace osu.Game.Online.API
                         Debug.Assert(ThreadSafety.IsUpdateThread);
 
                         localUser.Value = me;
+                        configSupporter.Value = me.IsSupporter;
                         state.Value = me.SessionVerified ? APIState.Online : APIState.RequiresSecondFactorAuth;
                         failureCount = 0;
                     };
@@ -368,7 +372,8 @@ namespace osu.Game.Online.API
 
             localUser.Value = new APIUser
             {
-                Username = ProvidedUsername
+                Username = ProvidedUsername,
+                IsSupporter = configSupporter.Value,
             };
         }
 
@@ -404,8 +409,8 @@ namespace osu.Game.Online.API
             SecondFactorCode = code;
         }
 
-        public IHubClientConnector GetHubConnector(string clientName, string endpoint, bool preferMessagePack) =>
-            new HubClientConnector(clientName, endpoint, this, versionHash, preferMessagePack);
+        public IHubClientConnector GetHubConnector(string clientName, string endpoint) =>
+            new HubClientConnector(clientName, endpoint, this, versionHash);
 
         public IChatClient GetChatClient() => new WebSocketChatClient(this);
 
@@ -607,6 +612,7 @@ namespace osu.Game.Online.API
             Schedule(() =>
             {
                 localUser.Value = createGuestUser();
+                configSupporter.Value = false;
                 friends.Clear();
             });
 

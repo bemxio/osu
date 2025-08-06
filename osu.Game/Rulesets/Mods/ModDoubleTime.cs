@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Collections.Generic;
 using osu.Framework.Audio;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.Sprites;
@@ -41,6 +42,20 @@ namespace osu.Game.Rulesets.Mods
             SpeedChange.MaxValue = e.NewValue ? 25 : 2.5;
             SpeedChange.Precision = e.NewValue ? 0.1 : 0.01;
         }
+
+        public override IEnumerable<(LocalisableString setting, LocalisableString value)> SettingDescription
+        {
+            get
+            {
+                foreach (var description in base.SettingDescription)
+                    yield return description;
+
+                if (!AdjustPitch.IsDefault)
+                    yield return ("Adjust pitch", AdjustPitch.Value ? "On" : "Off");
+            }
+        }
+
+        private readonly RateAdjustModHelper rateAdjustHelper;
 
         protected ModDoubleTime()
         {

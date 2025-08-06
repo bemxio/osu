@@ -56,9 +56,15 @@ namespace osu.Game.Screens.SelectV2
                 }
             }
 
-            public (string[] tags, Action<string> linkAction) Tags
+            public (string[] tags, Action<string> searchAction)? Tags
             {
-                set => setTags(value.tags, value.linkAction);
+                set
+                {
+                    if (value != null)
+                        setTags(value.Value.tags, value.Value.searchAction);
+                    else
+                        setLoading();
+                }
             }
 
             public MetadataDisplay(LocalisableString label)
@@ -155,12 +161,12 @@ namespace osu.Game.Screens.SelectV2
                 contentDate.Date = date;
             }
 
-            private void setTags(string[] tags, Action<string> link)
+            private void setTags(string[] tags, Action<string> searchAction)
             {
                 clear();
 
                 contentTags.Tags = tags;
-                contentTags.Action = link;
+                contentTags.PerformSearch = searchAction;
             }
 
             private void setLoading()
