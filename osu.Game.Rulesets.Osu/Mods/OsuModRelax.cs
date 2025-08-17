@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using osu.Framework.Bindables;
 using osu.Framework.Localisation;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Objects;
@@ -25,10 +27,13 @@ namespace osu.Game.Rulesets.Osu.Mods
         public override Type[] IncompatibleMods =>
             base.IncompatibleMods.Concat(new[] { typeof(OsuModShittyRelax), typeof(OsuModAutopilot), typeof(OsuModMagnetised), typeof(OsuModAlternate), typeof(OsuModSingleTap) }).ToArray();
 
-        /// <summary>
-        /// How early before a hitobject's start time to trigger a hit.
-        /// </summary>
-        public const float RELAX_LENIENCY = 12;
+        [SettingSource("Relax leniency", "How early before a hitobject's start time to trigger a hit.")]
+        public BindableNumber<float> RelaxLeniency { get; } = new BindableFloat(12.0f)
+        {
+            MinValue = -260.0f,
+            MaxValue = 260.0f,
+            Precision = 1.0f
+        };
 
         private bool isDownState;
         private bool wasLeft;
@@ -83,7 +88,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             foreach (var h in playfield.HitObjectContainer.AliveObjects.OfType<DrawableOsuHitObject>())
             {
                 // we are not yet close enough to the object.
-                if (time < h.HitObject.StartTime - RELAX_LENIENCY)
+                if (time < h.HitObject.StartTime - RelaxLeniency.Value)
                     break;
 
                 // already hit or beyond the hittable end time.
