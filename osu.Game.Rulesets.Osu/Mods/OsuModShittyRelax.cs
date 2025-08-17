@@ -46,7 +46,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             inputManager = ((DrawableOsuRuleset)drawableRuleset).KeyBindingInputManager;
             replayFrames = new SRXOsuAutoGenerator(drawableRuleset.Beatmap, drawableRuleset.Mods).Generate().Frames.Cast<OsuReplayFrame>().ToList();
         }
-        
+
         public void Update(Playfield playfield)
         {
             if (currentFrame == replayFrames.Count - 1)
@@ -60,9 +60,9 @@ namespace osu.Game.Rulesets.Osu.Mods
             {
                 currentFrame++;
 
-                new ReplayState<OsuAction> { 
+                new ReplayState<OsuAction> {
                     PressedActions = replayFrames[currentFrame].Actions
-                }.Apply(inputManager.CurrentState, inputManager); 
+                }.Apply(inputManager.CurrentState, inputManager);
             }
         }
 
@@ -73,7 +73,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             {
             }
 
-            public new const double KEY_UP_DELAY = 100;
+            public new const double KEY_UP_DELAY = 500;
         }
     }
 }
