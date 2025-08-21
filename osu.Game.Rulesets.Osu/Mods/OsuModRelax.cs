@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using osu.Framework.Bindables;
 using osu.Framework.Localisation;
+using osu.Framework.Utils;
 using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects.Types;
@@ -27,13 +28,16 @@ namespace osu.Game.Rulesets.Osu.Mods
         public override Type[] IncompatibleMods =>
             base.IncompatibleMods.Concat(new[] { typeof(OsuModShittyRelax), typeof(OsuModAutopilot), typeof(OsuModMagnetised), typeof(OsuModAlternate), typeof(OsuModSingleTap) }).ToArray();
 
-        [SettingSource("Relax leniency", "How early before a hitobject's start time to trigger a hit.")]
-        public BindableNumber<int> RelaxLeniency { get; } = new BindableInt(12)
+        [SettingSource("Leniency", "How early before a hitobject's start time to trigger a hit.")]
+        public BindableNumber<int> Leniency { get; } = new BindableInt(12)
         {
             MinValue = -260,
             MaxValue = 260,
             Precision = 1
         };
+
+        [SettingSource("Randomize leniency", "Randomizes the leniency value for each hitobject. If enabled, the \"Relax leniency\" setting will be used as a min/max value for the leniency.")]
+        public BindableBool RandomizeLeniency { get; } = new BindableBool();
 
         private bool isDownState;
         private bool wasLeft;
@@ -49,12 +53,17 @@ namespace osu.Game.Rulesets.Osu.Mods
         private bool hasReplay;
         private bool legacyReplay;
 
+        private int relaxLeniency;
+
         public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
         {
             ruleset = (DrawableOsuRuleset)drawableRuleset;
-
-            // grab the input manager for future use.
             osuInputManager = ruleset.KeyBindingInputManager;
+
+            if (RandomizeLeniency.Value)
+                relaxLeniency = RNG.Next(-Math.Abs(Leniency.Value), Math.Abs(Leniency.Value) + 1);
+            else
+                relaxLeniency = Leniency.Value;
         }
 
         public void ApplyToPlayer(Player player)
@@ -88,12 +97,15 @@ namespace osu.Game.Rulesets.Osu.Mods
             foreach (var h in playfield.HitObjectContainer.AliveObjects.OfType<DrawableOsuHitObject>())
             {
                 // we are not yet close enough to the object.
-                if (time < h.HitObject.StartTime - RelaxLeniency.Value)
+                if (time < h.HitObject.StartTime - relaxLeniency)
                     break;
 
                 // already hit or beyond the hittable end time.
                 if (h.IsHit || (h.HitObject is IHasDuration hasEnd && time > hasEnd.EndTime))
                     continue;
+
+                if (RandomizeLeniency.Value)
+                    relaxLeniency = RNG.Next(-Math.Abs(Leniency.Value), Math.Abs(Leniency.Value) + 1);
 
                 switch (h)
                 {
