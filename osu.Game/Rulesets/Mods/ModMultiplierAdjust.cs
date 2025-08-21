@@ -10,7 +10,7 @@ using osu.Game.Scoring;
 
 namespace osu.Game.Rulesets.Mods
 {
-    public sealed class ModMultiplierAdjust : Mod, IApplicableToScoreProcessor
+    public class ModMultiplierAdjust : Mod, IApplicableToScoreProcessor
     {
         public override string Name => "Multiplier Adjust";
         public override string Acronym => "MA";
@@ -19,13 +19,27 @@ namespace osu.Game.Rulesets.Mods
         public override IconUsage? Icon => FontAwesome.Solid.Hammer;
         public override ModType Type => ModType.Bemmy;
 
-        [SettingSource("Score multiplier", "The score multiplier that will be applied.")]
+        [SettingSource("Score multiplier", "The score multiplier that will overwrite the mod combination's multiplier.")]
         public BindableNumber<double> Multiplier { get; } = new BindableDouble(1)
         {
             MinValue = 0,
             MaxValue = 2,
             Precision = 0.01
         };
+
+        [SettingSource("Extended Limits", "Adjust the multiplier beyond sane limits.")]
+        public BindableBool ExtendedLimits { get; } = new BindableBool();
+
+        private void OnExtendedLimitsValueChanged(ValueChangedEvent<bool> e)
+        {
+            Multiplier.MaxValue = e.NewValue ? 10 : 2;
+            Multiplier.Precision = e.NewValue ? 1 : 0.01;
+        }
+
+        public ModMultiplierAdjust()
+        {
+            ExtendedLimits.BindValueChanged(OnExtendedLimitsValueChanged);
+        }
 
         public void ApplyToScoreProcessor(ScoreProcessor scoreProcessor)
         {
