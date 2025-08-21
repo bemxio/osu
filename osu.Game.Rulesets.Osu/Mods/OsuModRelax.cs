@@ -28,11 +28,11 @@ namespace osu.Game.Rulesets.Osu.Mods
             base.IncompatibleMods.Concat(new[] { typeof(OsuModShittyRelax), typeof(OsuModAutopilot), typeof(OsuModMagnetised), typeof(OsuModAlternate), typeof(OsuModSingleTap) }).ToArray();
 
         [SettingSource("Relax leniency", "How early before a hitobject's start time to trigger a hit.")]
-        public BindableNumber<float> RelaxLeniency { get; } = new BindableFloat(12.0f)
+        public BindableNumber<int> RelaxLeniency { get; } = new BindableInt(12)
         {
-            MinValue = -260.0f,
-            MaxValue = 260.0f,
-            Precision = 1.0f
+            MinValue = -260,
+            MaxValue = 260,
+            Precision = 1
         };
 
         private bool isDownState;
