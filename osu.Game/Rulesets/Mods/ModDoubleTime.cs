@@ -39,7 +39,7 @@ namespace osu.Game.Rulesets.Mods
 
         private void OnExtendedLimitsValueChanged(ValueChangedEvent<bool> e)
         {
-            SpeedChange.MaxValue = e.NewValue ? 25 : 2.5;
+            SpeedChange.MaxValue = e.NewValue ? 10 : 2.5;
             SpeedChange.Precision = e.NewValue ? 0.1 : 0.01;
         }
 

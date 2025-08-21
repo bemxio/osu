@@ -33,7 +33,7 @@ namespace osu.Game.Rulesets.Mods
         private void OnExtendedLimitsValueChanged(ValueChangedEvent<bool> e)
         {
             Multiplier.MaxValue = e.NewValue ? 10 : 2;
-            Multiplier.Precision = e.NewValue ? 1 : 0.01;
+            Multiplier.Precision = e.NewValue ? 0.1 : 0.01;
         }
 
         public ModMultiplierAdjust()
