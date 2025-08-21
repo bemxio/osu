@@ -7,7 +7,7 @@ using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.Catch.Mods
 {
-    public partial class CatchModTransRights : ModTransRights, IApplicableToDrawableRuleset<CatchHitObject>
+    public class CatchModTransRights : ModTransRights, IApplicableToDrawableRuleset<CatchHitObject>
     {
         public void ApplyToDrawableRuleset(DrawableRuleset<CatchHitObject> drawableRuleset)
         {

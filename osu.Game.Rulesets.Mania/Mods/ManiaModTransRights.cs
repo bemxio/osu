@@ -7,7 +7,7 @@ using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.Mania.Mods
 {
-    public partial class ManiaModTransRights : ModTransRights, IApplicableToDrawableRuleset<ManiaHitObject>
+    public class ManiaModTransRights : ModTransRights, IApplicableToDrawableRuleset<ManiaHitObject>
     {
         public void ApplyToDrawableRuleset(DrawableRuleset<ManiaHitObject> drawableRuleset)
         {

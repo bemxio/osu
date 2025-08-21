@@ -7,7 +7,7 @@ using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.Taiko.Mods
 {
-    public partial class TaikoModTransRights : ModTransRights, IApplicableToDrawableRuleset<TaikoHitObject>
+    public class TaikoModTransRights : ModTransRights, IApplicableToDrawableRuleset<TaikoHitObject>
     {
         public void ApplyToDrawableRuleset(DrawableRuleset<TaikoHitObject> drawableRuleset)
         {

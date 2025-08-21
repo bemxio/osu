@@ -9,7 +9,7 @@ using osu.Game.Rulesets.Scoring;
 
 namespace osu.Game.Rulesets.Mods
 {
-    public partial class ModNISZOgen : Mod, IApplicableToHealthProcessor
+    public class ModNISZOgen : Mod, IApplicableToHealthProcessor
     {
         public override string Name => "NISZOgen";
         public override string Acronym => "NGN";

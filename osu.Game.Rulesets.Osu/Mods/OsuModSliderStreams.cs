@@ -14,7 +14,7 @@ using System.Collections.Generic;
 
 namespace osu.Game.Rulesets.Osu.Mods
 {
-    public sealed class OsuModSliderStreams : Mod, IApplicableToBeatmap
+    public class OsuModSliderStreams : Mod, IApplicableToBeatmap
     {
         public override string Name => "Slider Streams";
         public override string Acronym => "SSS";

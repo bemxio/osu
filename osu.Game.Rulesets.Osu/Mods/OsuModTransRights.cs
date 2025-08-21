@@ -7,7 +7,7 @@ using osu.Game.Rulesets.UI;
 
 namespace osu.Game.Rulesets.Osu.Mods
 {
-    public partial class OsuModTransRights : ModTransRights, IApplicableToDrawableRuleset<OsuHitObject>
+    public class OsuModTransRights : ModTransRights, IApplicableToDrawableRuleset<OsuHitObject>
     {
         public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
         {
