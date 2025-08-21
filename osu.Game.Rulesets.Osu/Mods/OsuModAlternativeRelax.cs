@@ -13,16 +13,17 @@ using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.Replays;
 using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Rulesets.UI;
+using osu.Game.Screens.Play;
 using static osu.Game.Input.Handlers.ReplayInputHandler;
 
 namespace osu.Game.Rulesets.Osu.Mods
 {
-    public class OsuModShittyRelax : Mod, IApplicableToDrawableRuleset<OsuHitObject>, IUpdatableByPlayfield
+    public class OsuModAlternativeRelax : Mod, IUpdatableByPlayfield, IApplicableToDrawableRuleset<OsuHitObject>, IApplicableToPlayer, IHasNoTimedInputs
     {
-        public override string Name => "Shitty Relax";
-        public override string Acronym => "SRX";
-        public override LocalisableString Description => "A worse implementation of the Relax mod.";
-        public override double ScoreMultiplier => 1;
+        public override string Name => "Alternative Relax";
+        public override string Acronym => "ARX";
+        public override LocalisableString Description => "A different implementation of the Relax mod.";
+        public override double ScoreMultiplier => 0.1;
         public override IconUsage? Icon => OsuIcon.ModRelax;
         public override ModType Type => ModType.Bemmy;
 
@@ -36,23 +37,43 @@ namespace osu.Game.Rulesets.Osu.Mods
             typeof(OsuModSingleTap)
         };
 
-        private OsuInputManager inputManager = null!;
+        private DrawableOsuRuleset drawableOsuRuleset = null!;
+        private OsuInputManager osuInputManager = null!;
 
         private List<OsuReplayFrame> replayFrames = null!;
         private int currentFrame = -1;
 
+        private bool hasReplay;
+        private bool legacyReplay;
+
         public void ApplyToDrawableRuleset(DrawableRuleset<OsuHitObject> drawableRuleset)
         {
-            inputManager = ((DrawableOsuRuleset)drawableRuleset).KeyBindingInputManager;
-            replayFrames = new SRXOsuAutoGenerator(drawableRuleset.Beatmap, drawableRuleset.Mods).Generate().Frames.Cast<OsuReplayFrame>().ToList();
+            drawableOsuRuleset = (DrawableOsuRuleset)drawableRuleset;
+            osuInputManager = drawableOsuRuleset.KeyBindingInputManager;
+
+            replayFrames = new ARXOsuAutoGenerator(drawableOsuRuleset.Beatmap, drawableOsuRuleset.Mods).Generate().Frames.Cast<OsuReplayFrame>().ToList();
+        }
+
+        public void ApplyToPlayer(Player player)
+        {
+            if (osuInputManager.ReplayInputHandler != null)
+            {
+                hasReplay = true;
+                legacyReplay = drawableOsuRuleset.ReplayScore.ScoreInfo.IsLegacyScore;
+
+                return;
+            }
+
+            osuInputManager.AllowGameplayInputs = false;
         }
 
         public void Update(Playfield playfield)
         {
-            if (currentFrame == replayFrames.Count - 1)
-            {
+            if (hasReplay && !legacyReplay)
                 return;
-            }
+
+            if (currentFrame == replayFrames.Count - 1)
+                return;
 
             double time = playfield.Clock.CurrentTime;
 
@@ -62,13 +83,13 @@ namespace osu.Game.Rulesets.Osu.Mods
 
                 new ReplayState<OsuAction> {
                     PressedActions = replayFrames[currentFrame].Actions
-                }.Apply(inputManager.CurrentState, inputManager);
+                }.Apply(osuInputManager.CurrentState, osuInputManager);
             }
         }
 
-        private class SRXOsuAutoGenerator : OsuAutoGenerator
+        private class ARXOsuAutoGenerator : OsuAutoGenerator
         {
-            public SRXOsuAutoGenerator(IBeatmap beatmap, IReadOnlyList<Mod> mods)
+            public ARXOsuAutoGenerator(IBeatmap beatmap, IReadOnlyList<Mod> mods)
                 : base(beatmap, mods)
             {
             }

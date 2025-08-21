@@ -29,7 +29,7 @@ namespace osu.Game.Rulesets.Osu.Mods
         {
             typeof(OsuModSpunOut),
             typeof(ModRelax),
-            typeof(OsuModShittyRelax),
+            typeof(OsuModAlternativeRelax),
             typeof(ModAutoplay),
             typeof(OsuModMagnetised),
             typeof(OsuModRepel),

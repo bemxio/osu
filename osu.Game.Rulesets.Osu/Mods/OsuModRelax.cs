@@ -26,7 +26,7 @@ namespace osu.Game.Rulesets.Osu.Mods
         public override LocalisableString Description => @"You don't need to click. Give your clicking/tapping fingers a break from the heat of things.";
 
         public override Type[] IncompatibleMods =>
-            base.IncompatibleMods.Concat(new[] { typeof(OsuModShittyRelax), typeof(OsuModAutopilot), typeof(OsuModMagnetised), typeof(OsuModAlternate), typeof(OsuModSingleTap) }).ToArray();
+            base.IncompatibleMods.Concat(new[] { typeof(OsuModAlternativeRelax), typeof(OsuModAutopilot), typeof(OsuModMagnetised), typeof(OsuModAlternate), typeof(OsuModSingleTap) }).ToArray();
 
         [SettingSource("Leniency", "How early before a hitobject's start time to trigger a hit.")]
         public BindableNumber<int> Leniency { get; } = new BindableInt(12)
@@ -81,7 +81,7 @@ namespace osu.Game.Rulesets.Osu.Mods
             }
 
             pressHandler = new PressHandler(this);
-            osuInputManager.AllowGameplayInputs = false;
+            //osuInputManager.AllowGameplayInputs = false;
         }
 
         public void Update(Playfield playfield)
