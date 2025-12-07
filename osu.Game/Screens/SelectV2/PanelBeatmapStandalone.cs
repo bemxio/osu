@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -12,6 +11,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
+using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osu.Game.Graphics;
@@ -56,6 +56,7 @@ namespace osu.Game.Screens.SelectV2
         private CancellationTokenSource? starDifficultyCancellationSource;
 
         private PanelSetBackground beatmapBackground = null!;
+        private ScheduledDelegate? scheduledBackgroundRetrieval;
 
         private OsuSpriteText titleText = null!;
         private OsuSpriteText artistText = null!;
@@ -72,6 +73,8 @@ namespace osu.Game.Screens.SelectV2
         private FillFlowContainer mainFill = null!;
 
         private Box backgroundBorder = null!;
+
+        private BeatmapInfo beatmap => ((GroupedBeatmap)Item!.Model).Beatmap;
 
         public PanelBeatmapStandalone()
         {
@@ -209,17 +212,8 @@ namespace osu.Game.Screens.SelectV2
         {
             base.LoadComplete();
 
-            ruleset.BindValueChanged(_ =>
-            {
-                computeStarRating();
-                updateKeyCount();
-            });
-
-            mods.BindValueChanged(_ =>
-            {
-                computeStarRating();
-                updateKeyCount();
-            }, true);
+            ruleset.BindValueChanged(_ => updateKeyCount());
+            mods.BindValueChanged(_ => updateKeyCount(), true);
 
             Selected.BindValueChanged(s => Expanded.Value = s.NewValue, true);
         }
@@ -228,12 +222,9 @@ namespace osu.Game.Screens.SelectV2
         {
             base.PrepareForUse();
 
-            Debug.Assert(Item != null);
-
-            var beatmap = (BeatmapInfo)Item.Model;
             var beatmapSet = beatmap.BeatmapSet!;
 
-            beatmapBackground.Beatmap = beatmaps.GetWorkingBeatmap(beatmap);
+            scheduledBackgroundRetrieval = Scheduler.AddDelayed(b => beatmapBackground.Beatmap = beatmaps.GetWorkingBeatmap(b), beatmap, 50);
 
             titleText.Text = new RomanisableString(beatmapSet.Metadata.TitleUnicode, beatmapSet.Metadata.Title);
             artistText.Text = new RomanisableString(beatmapSet.Metadata.ArtistUnicode, beatmapSet.Metadata.Artist);
@@ -255,6 +246,8 @@ namespace osu.Game.Screens.SelectV2
         {
             base.FreeAfterUse();
 
+            scheduledBackgroundRetrieval?.Cancel();
+            scheduledBackgroundRetrieval = null;
             beatmapBackground.Beatmap = null;
             updateButton.BeatmapSet = null;
             localRank.Beatmap = null;
@@ -271,9 +264,7 @@ namespace osu.Game.Screens.SelectV2
             if (Item == null)
                 return;
 
-            var beatmap = (BeatmapInfo)Item.Model;
-
-            starDifficultyBindable = difficultyCache.GetBindableDifficulty(beatmap, starDifficultyCancellationSource.Token, SongSelect.SELECTION_DEBOUNCE);
+            starDifficultyBindable = difficultyCache.GetBindableDifficulty(beatmap, starDifficultyCancellationSource.Token, SongSelect.DIFFICULTY_CALCULATION_DEBOUNCE);
             starDifficultyBindable.BindValueChanged(starDifficulty =>
             {
                 starRatingDisplay.Current.Value = starDifficulty.NewValue;
@@ -309,8 +300,6 @@ namespace osu.Game.Screens.SelectV2
             if (Item == null)
                 return;
 
-            var beatmap = (BeatmapInfo)Item.Model;
-
             if (ruleset.Value.OnlineID == 3)
             {
                 // Account for mania differences locally for now.
@@ -335,7 +324,7 @@ namespace osu.Game.Screens.SelectV2
                 List<MenuItem> items = new List<MenuItem>();
 
                 if (songSelect != null)
-                    items.AddRange(songSelect.GetForwardActions((BeatmapInfo)Item.Model));
+                    items.AddRange(songSelect.GetForwardActions(beatmap));
 
                 return items.ToArray();
             }

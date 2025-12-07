@@ -280,7 +280,7 @@ namespace osu.Game.Screens.OnlinePlay.Multiplayer
                                                                             new AddItemButton
                                                                             {
                                                                                 RelativeSizeAxes = Axes.X,
-                                                                                Height = 40,
+                                                                                Height = 30,
                                                                                 Text = "Add item",
                                                                                 Action = () => ShowSongSelect()
                                                                             },
@@ -618,7 +618,7 @@ namespace osu.Game.Screens.OnlinePlay.Multiplayer
                     updateGameplayState();
 
                     if (client.LocalUser.State == MultiplayerUserState.Ready)
-                        client.ChangeState(MultiplayerUserState.Idle);
+                        client.ChangeState(MultiplayerUserState.Idle).FireAndForget();
                     break;
             }
         }

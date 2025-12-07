@@ -145,8 +145,10 @@ namespace osu.Game.Skinning
                     return SkinUtils.As<TValue>(new Bindable<float>(existing.ColumnWidth[maniaLookup.ColumnIndex.Value]));
 
                 case LegacyManiaSkinConfigurationLookups.WidthForNoteHeightScale:
-                    Debug.Assert(maniaLookup.ColumnIndex != null);
-                    return SkinUtils.As<TValue>(new Bindable<float>(existing.WidthForNoteHeightScale));
+                    float width = existing.WidthForNoteHeightScale;
+                    if (width <= 0)
+                        width = existing.MinimumColumnWidth;
+                    return SkinUtils.As<TValue>(new Bindable<float>(width));
 
                 case LegacyManiaSkinConfigurationLookups.HitPosition:
                     return SkinUtils.As<TValue>(new Bindable<float>(existing.HitPosition));
@@ -537,6 +539,10 @@ namespace osu.Game.Skinning
             {
                 case "Menu/fountain-star":
                     componentName = "star2";
+                    break;
+
+                case @"Intro/Welcome/welcome_text":
+                    componentName = @"welcome_text";
                     break;
             }
 
