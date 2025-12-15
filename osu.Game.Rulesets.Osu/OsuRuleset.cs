@@ -238,7 +238,8 @@ namespace osu.Game.Rulesets.Osu
                         new ModNISZOgen(),
                         new OsuModTransRights(),
                         new OsuModAlternativeRelax(),
-                        new OsuModSliderStreams()
+                        new OsuModSliderStreams(),
+                        new OsuModSpinnerMadness()
                     };
 
                 default:
