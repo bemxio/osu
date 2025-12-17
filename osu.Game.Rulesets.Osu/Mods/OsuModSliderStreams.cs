@@ -22,6 +22,8 @@ namespace osu.Game.Rulesets.Osu.Mods
         public override double ScoreMultiplier => 1;
         public override ModType Type => ModType.Bemmy;
 
+        public override Type[] IncompatibleMods => new[] { typeof(OsuModSpinnerMadness) };
+
         [SettingSource("Beat divisor", "The beat divisor to use for stream generation.")]
         public BindableNumber<int> BeatDivisor { get; } = new BindableInt(4)
         {

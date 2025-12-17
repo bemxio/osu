@@ -11,6 +11,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Beatmaps;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
+using System;
 using System.Collections.Generic;
 
 namespace osu.Game.Rulesets.Osu.Mods
@@ -23,6 +24,8 @@ namespace osu.Game.Rulesets.Osu.Mods
         public override double ScoreMultiplier => 1;
         public override IconUsage? Icon => OsuIcon.ModSpunOut;
         public override ModType Type => ModType.Bemmy;
+
+        public override Type[] IncompatibleMods => new[] { typeof(OsuModSpunOut), typeof(OsuModSliderStreams) };
 
         [SettingSource("Spinner replacement mode", "The way in which hit circles and sliders are replaced with spinners.")]
         public Bindable<ReplacementMode> SpinnerReplacementMode { get; } = new Bindable<ReplacementMode>();
